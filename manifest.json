@@ -1,0 +1,27 @@
+{
+  "name": "Hall of Fame ©opyract",
+  "short_name": "Hall of Fame",
+  "description": "Gestion de collection musicale hors ligne",
+  "start_url": "/Hall_of_fame_mobile.html",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#334a91",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%23334a91' width='192' height='192'/%3E%3Cpath fill='%23fff' d='M96 40c-30.9 0-56 25.1-56 56s25.1 56 56 56 56-25.1 56-56-25.1-56-56-56zm0 96c-22.1 0-40-17.9-40-40s17.9-40 40-40 40 17.9 40 40-17.9 40-40 40z'/%3E%3Ccircle fill='%23fff' cx='96' cy='96' r='20'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%23334a91' width='512' height='512'/%3E%3Cpath fill='%23fff' d='M256 100c-86 0-156 70-156 156s70 156 156 156 156-70 156-156-70-156-156-156zm0 264c-59.6 0-108-48.4-108-108s48.4-108 108-108 108 48.4 108 108-48.4 108-108 108z'/%3E%3Ccircle fill='%23fff' cx='256' cy='256' r='50'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "productivity"],
+  "lang": "fr",
+  "dir": "ltr"
+}
