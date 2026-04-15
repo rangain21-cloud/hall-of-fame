@@ -1,3 +1,0 @@
-# hall-of-fame
-Musiques de la discothèque, films et autres; 
-Spectacles vus en live...
