@@ -1135,43 +1135,77 @@
 	}
 
 	async function loadGoogleAPI() {
-		const s1 = document.createElement('script');
-		s1.src = 'https://apis.google.com/js/api.js';
-		s1.async = true;
-		s1.defer = true;
-		s1.onload = async () => {
-			await waitForGAPI();
-			gapi.load('client', async () => {
-				await gapi.client.init({
-					apiKey: GDRIVE_CONFIG.API_KEY,
-					discoveryDocs: GDRIVE_CONFIG.DISCOVERY_DOCS,
-				});
-				gapiInited = true;
-				console.log('✓ GAPI OK');
-			});
-		};
-		document.head.appendChild(s1);
+		try {
+			console.log('📥 Début chargement des scripts Google...');
+			
+			// Charger le script GAPI
+			const s1 = document.createElement('script');
+			s1.src = 'https://apis.google.com/js/api.js';
+			document.head.appendChild(s1);
+			console.log('✓ Script GAPI ajouté au DOM');
 
-		const s2 = document.createElement('script');
-		s2.src = 'https://accounts.google.com/gsi/client';
-		s2.async = true;
-		s2.defer = true;
-		s2.onload = async () => {
+			// Charger le script GIS
+			const s2 = document.createElement('script');
+			s2.src = 'https://accounts.google.com/gsi/client';
+			document.head.appendChild(s2);
+			console.log('✓ Script GIS ajouté au DOM');
+
+			// Attendre que GAPI soit disponible
+			console.log('⏳ Attente de GAPI...');
+			await waitForGAPI();
+			console.log('✅ GAPI disponible dans window');
+			
+			// Initialiser GAPI
+			console.log('🔧 Démarrage initialisation GAPI client...');
+			await new Promise((resolve, reject) => {
+				gapi.load('client', async () => {
+					try {
+						console.log('🔧 gapi.load("client") callback exécuté');
+						console.log('🔧 Appel gapi.client.init avec API_KEY:', GDRIVE_CONFIG.API_KEY);
+						await gapi.client.init({
+							apiKey: GDRIVE_CONFIG.API_KEY,
+							discoveryDocs: GDRIVE_CONFIG.DISCOVERY_DOCS,
+						});
+						gapiInited = true;
+						console.log('✅✅✅ GAPI INITIALISÉ AVEC SUCCÈS');
+						resolve();
+					} catch (error) {
+						console.error('❌ Erreur dans gapi.client.init:', error);
+						console.error('Détails erreur:', error.message);
+						reject(error);
+					}
+				});
+			});
+
+			// Attendre que GIS soit disponible
+			console.log('⏳ Attente de GIS...');
 			await waitForGIS();
+			console.log('✅ GIS disponible dans window');
+			
+			// Initialiser GIS
+			console.log('🔧 Démarrage initialisation GIS tokenClient...');
 			tokenClient = google.accounts.oauth2.initTokenClient({
 				client_id: GDRIVE_CONFIG.CLIENT_ID,
 				scope: GDRIVE_CONFIG.SCOPES,
 				callback: (response) => {
-					if (response.error) return console.error('✗ OAuth:', response);
+					if (response.error) {
+						console.error('❌ OAuth error:', response);
+						return;
+					}
 					accessToken = response.access_token;
 					driveConnected = true;
 					updateDriveStatus(true);
+					console.log('✅ Connexion Drive réussie');
 				}
 			});
 			gisInited = true;
-			console.log('✓ GIS OK');
-		};
-		document.head.appendChild(s2);
+			console.log('✅✅✅ GIS INITIALISÉ AVEC SUCCÈS');
+			
+			console.log('🎉🎉🎉 INITIALISATION GOOGLE COMPLÈTE !');
+		} catch (error) {
+			console.error('❌❌❌ ERREUR FATALE dans loadGoogleAPI:', error);
+			console.error('Stack trace:', error.stack);
+		}
 	}
 
 	function connectToDrive() {
