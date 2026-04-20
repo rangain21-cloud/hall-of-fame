@@ -4336,7 +4336,8 @@
 				deferredPrompt = e;
 				
 				// Afficher un bouton d'installation personnalisé
-				showInstallPromotion();
+				// Désactivé pour ne pas déranger l'utilisateur
+				// showInstallPromotion();
 			});
 
 			function showInstallPromotion() {
@@ -4396,7 +4397,7 @@
 		}
 	</script>
 	<!-- À placer juste avant </body> -->
-<button onclick="testDrive()" style="position:fixed;bottom:10px;right:10px;z-index:9999;padding:15px;background:red;color:white;font-weight:bold;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+<button onclick="testDrive()" style="position:fixed;bottom:80px;right:10px;z-index:9999;padding:15px;background:red;color:white;font-weight:bold;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
 	🔍 TEST DRIVE
 </button>
 
@@ -4438,7 +4439,7 @@ window.saveAllToDrive = async function() {
 	
 	try {
 		console.log('💾 Début sauvegarde Drive...');
-		alert('Sauvegarde sur Drive en cours...');
+		// Supprimé : alert('Sauvegarde sur Drive en cours...');
 		
 		// Sauvegarder le fichier source
 		const sourceHeaders = Object.keys(data[0]);
@@ -4466,7 +4467,8 @@ window.saveAllToDrive = async function() {
 			await saveToGoogleDrive(artistFileName || 'Artistes.csv', artistWithHeaders);
 		}
 		
-		alert('✓ Fichiers sauvegardés sur Drive avec succès !');
+		console.log('✓ Fichiers sauvegardés sur Drive avec succès !');
+		// Supprimé : alert('✓ Fichiers sauvegardés sur Drive avec succès !');
 	} catch (error) {
 		console.error('Erreur sauvegarde Drive:', error);
 		alert('✗ Erreur lors de la sauvegarde: ' + error.message);
@@ -4481,7 +4483,7 @@ window.loadAllFromDrive = async function() {
 	
 	try {
 		console.log('⬇️ Début chargement Drive...');
-		alert('Chargement depuis Drive en cours...');
+		// Supprimé : alert('Chargement depuis Drive en cours...');
 		
 		// Charger HOF.csv (votre fichier source)
 		const sourceContent = await loadFromGoogleDrive('HOF.csv');
@@ -4535,7 +4537,8 @@ window.loadAllFromDrive = async function() {
 		}
 		
 		if (sourceContent || artistContent) {
-			alert('✓ Données chargées depuis Drive avec succès !');
+			console.log('✓ Données chargées depuis Drive avec succès !');
+			// Supprimé : alert('✓ Données chargées depuis Drive avec succès !');
 		} else {
 			alert('⚠ Aucun fichier trouvé sur Drive (cherche: HOF.csv et Artistes.csv)');
 		}
