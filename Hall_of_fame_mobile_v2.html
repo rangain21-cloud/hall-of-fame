@@ -4653,18 +4653,24 @@ window.populateComposerList = function() {
 
 window.populateMusicienList = function() {
 	const datalist = document.getElementById('musicienList');
-	if (!datalist || !data || data.length === 0) return;
+	if (!datalist) return;
 	
 	datalist.innerHTML = '';
-	const uniqueMusicians = [...new Set(data.map(row => row['Musicien']).filter(Boolean))].sort();
 	
-	uniqueMusicians.forEach(musician => {
-		const option = document.createElement('option');
-		option.value = musician;
-		datalist.appendChild(option);
-	});
-	
-	console.log('✓ Musicien list populated:', uniqueMusicians.length, 'items');
+	// Chercher dans les artistes (fichier Artistes.csv)
+	if (artistData && artistData.length > 0) {
+		const uniqueMusicians = [...new Set(artistData.map(row => row['Nom Complet']).filter(Boolean))].sort();
+		
+		uniqueMusicians.forEach(musician => {
+			const option = document.createElement('option');
+			option.value = musician;
+			datalist.appendChild(option);
+		});
+		
+		console.log('✓ Musicien list populated from Artistes.csv:', uniqueMusicians.length, 'items');
+	} else {
+		console.log('⚠ Aucune donnée artiste disponible pour populateMusicienList');
+	}
 };
 
 window.populateArtistList = function() {
