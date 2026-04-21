@@ -2145,6 +2145,9 @@
 <body>
 	<div class="topbar">
 		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+			<h2 style="margin:0; color:#334a91; font-size:1.2rem; white-space:nowrap;">🎵 Hall of Fame 📱</h2>
+		</div>
+		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
 			<label for="csvFileInput" class="highlight-btn">📁 Fichier source</label>
 			<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="csvFileName" class="file-info"></span>
@@ -4688,11 +4691,19 @@ window.populateArtistList = function() {
 		return;
 	}
 	
-	// Trier par Nom Complet
+	// Trier par Nom puis par Prénom
 	const sortedArtists = [...artistData].sort((a, b) => {
-		const nameA = (a['Nom Complet'] || '').toLowerCase();
-		const nameB = (b['Nom Complet'] || '').toLowerCase();
-		return nameA.localeCompare(nameB);
+		const nomA = (a['Nom'] || '').toLowerCase();
+		const nomB = (b['Nom'] || '').toLowerCase();
+		
+		// Comparer d'abord par Nom
+		const nomCompare = nomA.localeCompare(nomB);
+		if (nomCompare !== 0) return nomCompare;
+		
+		// Si les noms sont identiques, comparer par Prénom
+		const prenomA = (a['Prénom'] || '').toLowerCase();
+		const prenomB = (b['Prénom'] || '').toLowerCase();
+		return prenomA.localeCompare(prenomB);
 	});
 	
 	// Vider le tableau
@@ -4742,7 +4753,7 @@ window.populateArtistList = function() {
 		`;
 	});
 	
-	console.log('✓ Liste des artistes affichée:', sortedArtists.length, 'artistes triés par Nom Complet');
+	console.log('✓ Liste des artistes affichée:', sortedArtists.length, 'artistes triés par Nom puis Prénom');
 };
 
 // Ajouter l'événement pour synchroniser Type de musique avec Genre musical
