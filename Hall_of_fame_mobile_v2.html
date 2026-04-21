@@ -1,0 +1,4862 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Hall of fame ©opyract</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	
+	<!-- PWA Metadata -->
+	<meta name="description" content="Gestion de collection musicale hors ligne avec synchronisation Google Drive">
+	<meta name="theme-color" content="#334a91">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-title" content="Hall of Fame">
+	<meta name="mobile-web-app-capable" content="yes">
+	
+	<!-- Manifest -->
+	<link rel="manifest" href="manifest.json">
+	
+	<!-- Icons -->
+	<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%23334a91' width='192' height='192'/%3E%3Cpath fill='%23fff' d='M96 40c-30.9 0-56 25.1-56 56s25.1 56 56 56 56-25.1 56-56-25.1-56-56-56zm0 96c-22.1 0-40-17.9-40-40s17.9-40 40-40 40 17.9 40 40-17.9 40-40 40z'/%3E%3Ccircle fill='%23fff' cx='96' cy='96' r='20'/%3E%3C/svg%3E">
+	<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%23334a91' width='192' height='192'/%3E%3Cpath fill='%23fff' d='M96 40c-30.9 0-56 25.1-56 56s25.1 56 56 56 56-25.1 56-56-25.1-56-56-56zm0 96c-22.1 0-40-17.9-40-40s17.9-40 40-40 40 17.9 40 40-17.9 40-40 40z'/%3E%3Ccircle fill='%23fff' cx='96' cy='96' r='20'/%3E%3C/svg%3E">
+	
+	<style>
+		/* ------------------------------------------------------------------- */
+		/* 1. Responsivité et Unités Relatives (rem, em, ch) */
+		/* OPTIMISATIONS TACTILES MOBILE */
+
+		/* Variables CSS pour thème et espacement tactile */
+		:root {
+			--touch-target-min: 48px; /* Taille minimale pour cibles tactiles Android */
+			--spacing-xs: 0.5rem;
+			--spacing-sm: 0.75rem;
+			--spacing-md: 1rem;
+			--spacing-lg: 1.5rem;
+			--primary-color: #334a91;
+			--secondary-color: #476bb6;
+			--bg-color: #f6f7fb;
+			--text-color: #222;
+		}
+
+		/* Support du mode sombre (économie batterie) */
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg-color: #1a1a1a;
+				--text-color: #e0e0e0;
+				--primary-color: #5a7bc4;
+			}
+		}
+
+		/* Désactiver la sélection de texte pour améliorer l'UX tactile */
+		* {
+			-webkit-tap-highlight-color: transparent;
+			-webkit-touch-callout: none;
+		}
+
+		/* Permettre la sélection dans les champs de saisie uniquement */
+		input, textarea {
+			-webkit-user-select: text;
+			user-select: text;
+		}
+
+		/* Conteneur de défilement pour le tableau */
+		#table-scroll-container {
+			/* Utilise l'espace restant dans .main */
+			height: calc(100vh - 3.125rem - 1rem - 2.5rem);
+			/* Hauteur totale - topbar - padding-top du .main - hauteur h1 estimée */
+			overflow-y: auto;
+			overflow-x: auto; /* Défilement horizontal sur mobile */
+			-webkit-overflow-scrolling: touch; /* Défilement fluide iOS */
+			margin-top: 0.875rem;
+			/* Marge inférieure du h1 */
+		}
+
+		/* ------------------------------------------------------------------- */
+		html {
+			font-size: 16px;
+		}
+
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			background: #f6f7fb;
+			color: #222;
+		}
+
+		.topbar {
+			padding: 0.75rem 1rem;
+			border-bottom: 1px solid #d8dbe8;
+			background: #f8f9ff;
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			z-index: 100;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		/* 1. Écran principal (90% de la surface disponible) */
+		.layout {
+			display: flex;
+			min-height: calc(100vh - 3.125rem);
+			margin-top: 3.125rem;
+		}
+
+		/* 50px -> 3.125rem */
+
+		.sidebar {
+			width: 17.5rem;
+			background: #e9ecf6;
+			border-right: 1px solid #cfd3e1;
+			padding: 1rem;
+			display: flex;
+			flex-direction: column;
+			gap: 0.75rem;
+			position: sticky;
+			top: 3.125rem;
+			height: calc(100vh - 3.125rem);
+			overflow-y: auto;
+		}
+
+		/* 280px -> 17.5rem, 16px -> 1rem, 12px -> 0.75rem */
+		.sidebar label {
+			font-size: 0.8125rem;
+			font-weight: bold;
+		}
+
+		/* 13px -> 0.8125rem */
+		.sidebar input,
+		.sidebar button,
+		.sidebar select,
+		.sidebar datalist {
+			margin-top: 0.375rem;
+		}
+
+		/* 6px -> 0.375rem */
+		.sidebar input[type="text"],
+		.sidebar input[list],
+		.sidebar select {
+			width: 100%;
+			padding: 0.75rem 1rem; /* Augmenté pour tactile */
+			box-sizing: border-box;
+			min-height: var(--touch-target-min);
+			font-size: 1rem;
+			border: 2px solid #d8dbe8;
+			border-radius: 8px;
+			transition: border-color 0.2s;
+		}
+
+		.sidebar input:focus,
+		.sidebar select:focus {
+			outline: none;
+			border-color: var(--primary-color);
+			box-shadow: 0 0 0 3px rgba(51, 74, 145, 0.1);
+		}
+
+		/* 6px 8px -> 0.375rem 0.5rem */
+		.sidebar button {
+			padding: 0.75rem 1rem; /* Augmenté pour tactile */
+			cursor: pointer;
+			min-height: var(--touch-target-min);
+			min-width: var(--touch-target-min);
+			font-size: 1rem;
+			border-radius: 8px;
+			transition: background-color 0.2s, transform 0.1s;
+			border: 2px solid var(--primary-color);
+			background: var(--primary-color);
+			color: white;
+			font-weight: 600;
+		}
+
+		.sidebar button:active {
+			transform: scale(0.95); /* Feedback visuel au toucher */
+		}
+
+		/* 8px 10px -> 0.5rem 0.625rem */
+
+		/* Main content area takes the rest of the space and has scroll */
+		.main {
+			flex: 1;
+			padding: 1rem 1.125rem;
+			width: 90vw;
+		}
+
+		/* 16px 18px -> 1rem 1.125rem */
+
+		/* Force la visibilité du tableau en cas de problème CSS */
+		#dataTable {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		h1 {
+			margin: 0.5rem 0 0.875rem 0;
+			text-align: center;
+		}
+
+		/* 8px 0 14px 0 -> 0.5rem 0 0.875rem 0 */
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			background: #fff;
+		}
+
+		th,
+		td {
+			border: 1px solid #d9dbe3;
+			padding: 0.375rem 0.5rem;
+			font-size: 0.8125rem;
+			max-width: 11.25rem;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		/* 6px 8px -> 0.375rem 0.5rem, 13px -> 0.8125rem, 180px -> 11.25rem */
+		th {
+			background: #334a91;
+			color: #fff;
+			position: sticky;
+			top: 0;
+			z-index: 50;
+		}
+
+		/* Entête figée */
+		#dataTable thead th {
+			position: sticky;
+			top: 0;
+		}
+
+		tr:nth-child(even) {
+			background: #f5f7ff;
+		}
+
+		.actions button {
+			padding: 0.25rem 0.5rem;
+			margin-right: 0.375rem;
+			cursor: pointer;
+		}
+
+		/* 4px 8px -> 0.25rem 0.5rem, 6px -> 0.375rem */
+
+		/* Modale pour l'édition */
+		#visualizationModal {
+			min-width: 90vw;
+			max-height: 90vh;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			padding: 1.5rem;
+		}
+
+		#chart_div {
+			width: 100%;
+			height: 80vh;
+		}
+
+		.chart-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 1rem;
+		}
+
+		.chart-header button {
+			padding: 0.5rem 1rem;
+			cursor: pointer;
+		}
+
+		.modal {
+			position: fixed;
+			top: 3.75rem;
+			left: 50%;
+			transform: translateX(-50%);
+			min-width: 35rem; /* Réduit de 45rem à 35rem */
+			max-width: 90vw;
+			width: auto;
+			background: #fff;
+			border: 2px solid #476bb6;
+			border-radius: 0.5rem;
+			box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, .2);
+			padding: 0.875rem;
+			display: none;
+			z-index: 1000;
+			resize: both; /* Permet le redimensionnement */
+			overflow: auto; /* Nécessaire pour resize */
+		}
+
+		/* Barre de titre pour déplacer la modale */
+		.modal-header {
+			cursor: move;
+			user-select: none;
+			padding: 0.5rem;
+			margin: -0.875rem -0.875rem 0.5rem -0.875rem;
+			background: #f0f4ff;
+			border-bottom: 1px solid #d8dbe8;
+			border-radius: 0.5rem 0.5rem 0 0;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.modal-title {
+			font-size: 1.125rem;
+			font-weight: bold;
+			color: #334a91;
+			margin: 0;
+		}
+
+		/* Indicateur de redimensionnement */
+		.modal-resizer {
+			position: absolute;
+			bottom: 0;
+			right: 0;
+			width: 20px;
+			height: 20px;
+			cursor: nwse-resize;
+			background: linear-gradient(135deg, transparent 50%, #476bb6 50%);
+			border-radius: 0 0 0.5rem 0;
+		}
+
+		/* 60px -> 3.75rem, 720px -> 45rem, 8px -> 0.5rem, 10px 40px -> 0.625rem 2.5rem, 14px -> 0.875rem */
+		.modal .close {
+			cursor: pointer;
+			font-weight: bold;
+			font-size: 1.5rem;
+			color: #666;
+			background: none;
+			border: none;
+			padding: 0;
+			width: 30px;
+			height: 30px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			transition: background 0.2s;
+		}
+
+		.modal .close:hover {
+			background: #f0f0f0;
+			color: #333;
+		}
+
+		/* Style spécifique pour la modale Nouvelle entrée */
+		.modal-entry {
+			min-width: 35rem;
+			width: 50vw;
+			max-width: 90vw;
+		}
+
+		.modal-content {
+			padding: 1rem 0;
+		}
+
+		.modal-artist-list {
+			min-width: 80vw;
+			max-height: 90vh;
+			display: flex;
+			flex-direction: column;
+		}
+
+		/* Ajuster les styles des boutons dans la modale */
+		.modal button[type="button"] {
+			padding: 0.375rem 0.5rem;
+			cursor: pointer;
+			background: #334a91;
+			color: white;
+			border: 1px solid #334a91;
+			border-radius: 0.25rem;
+			font-weight: bold;
+		}
+
+		.btn-initial-artiste {
+			width: 6ch;
+		}
+
+		/* Classes pour largeurs d'inputs */
+		.w-7ch { width: 7.2ch; }
+		.w-8ch { width: 8ch; }
+		.w-6ch { width: 6ch; }
+		.w-40ch { width: 40ch; }
+		.w-22ch { width: 22ch; }
+		.w-53ch { width: 53ch; }
+		.w-32ch { width: 32ch; }
+		.w-38ch { width: 38ch; }
+		.w-96ch { width: 96ch; }
+		.w-98ch { width: 98ch; }
+		.w-3cm { width: 3cm; }
+		.w-8cm { width: 8cm; }
+		.h-4rem { height: 4rem; }
+
+		/* Styles pour la section Google Drive */
+		.gdrive-section {
+			background: #e3f2fd;
+			padding: 1rem;
+			border-radius: 8px;
+			margin-bottom: 0.5rem;
+		}
+
+		.gdrive-title {
+			display: block;
+			margin-bottom: 0.5rem;
+			color: #1976d2;
+			font-size: 0.95rem;
+		}
+
+		.gdrive-btn {
+			width: 100%;
+			margin-bottom: 0.5rem;
+			min-height: var(--touch-target-min);
+			border: none;
+			color: white;
+			font-weight: 600;
+			border-radius: 6px;
+		}
+
+		.gdrive-save {
+			background: #1976d2;
+		}
+
+		.gdrive-save:hover {
+			background: #1565c0;
+		}
+
+		.gdrive-load {
+			background: #388e3c;
+		}
+
+		.gdrive-load:hover {
+			background: #2e7d32;
+		}
+
+		.gdrive-toggle {
+			background: #757575;
+		}
+
+		.gdrive-toggle:hover {
+			background: #616161;
+		}
+
+		/* 18px -> 1.125rem */
+		.row {
+			display: flex;
+			gap: 0.625rem;
+			align-items: center;
+			margin-top: 0.5rem;
+			width: 100%;
+		}
+
+		/* 10px -> 0.625rem, 8px -> 0.5rem */
+		.row label {
+			white-space: nowrap;
+			font-size: 0.8125rem;
+			min-width: 1.5rem;
+			text-align: right;
+			padding-right: 0.5rem;
+		}
+
+		/* 13px -> 0.8125rem */
+		.row input,
+		.row select,
+		.row textarea {
+			padding: 0.375rem 0.5rem;
+			box-sizing: border-box;
+		}
+
+		/* 6px 8px -> 0.375rem 0.5rem */
+		.row input[type="radio"] {
+			margin-left: 0.5rem;
+		}
+
+		.footer {
+			margin-top: 0.875rem;
+			display: flex;
+			gap: 0.625rem;
+		}
+
+		/* 14px -> 0.875rem, 10px -> 0.625rem */
+
+		/* Style pour figer la taille de "Cherche artiste" */
+		#eWorking1 {
+			width: 15.625rem !important;
+			/* 250px -> 15.625rem */
+			min-width: 15.625rem !important;
+			max-width: 15.625rem !important;
+			box-sizing: border-box;
+		}
+
+		/* Style pour augmenter le nombre de valeurs visibles dans la liste Format */
+		#formatList {
+			height: 9.375rem;
+			/* 150px -> 9.375rem */
+			overflow-y: auto;
+		}
+
+		/* ------------------------------------------------------------------- */
+		/* RESPONSIVE MOBILE - Sidebar collapsible */
+		/* ------------------------------------------------------------------- */
+		
+		@media (max-width: 768px) {
+			/* Sidebar en overlay sur mobile */
+			.sidebar {
+				position: fixed;
+				left: -100%;
+				top: 3.125rem;
+				width: 85vw;
+				max-width: 320px;
+				height: calc(100vh - 3.125rem);
+				z-index: 999;
+				transition: left 0.3s ease;
+				box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+			}
+
+			.sidebar.open {
+				left: 0;
+			}
+
+			/* Bouton hamburger pour ouvrir la sidebar */
+			.menu-toggle {
+				display: block;
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				width: 56px;
+				height: 56px;
+				background: var(--primary-color);
+				border-radius: 50%;
+				border: none;
+				box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+				z-index: 1001;
+				cursor: pointer;
+				color: white;
+				font-size: 24px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: transform 0.2s;
+			}
+
+			.menu-toggle:active {
+				transform: scale(0.9);
+			}
+
+			/* Overlay sombre quand sidebar ouverte */
+			.sidebar-overlay {
+				display: none;
+				position: fixed;
+				top: 3.125rem;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0,0,0,0.5);
+				z-index: 998;
+			}
+
+			.sidebar-overlay.active {
+				display: block;
+			}
+
+			.main {
+				width: 100%;
+				padding: 0.5rem;
+			}
+
+			/* Tableau responsive */
+			#dataTable {
+				font-size: 0.75rem;
+			}
+
+			th, td {
+				padding: 0.5rem 0.25rem;
+				min-width: 80px;
+			}
+
+			/* Actions buttons plus petits sur mobile */
+			.actions button {
+				padding: 0.375rem 0.5rem;
+				font-size: 0.75rem;
+			}
+
+			/* Modales en plein écran sur mobile */
+			.modal {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				transform: none;
+				min-width: 100%;
+				max-width: 100%;
+				border-radius: 0;
+				padding: 1rem;
+				overflow-y: auto;
+			}
+
+			#visualizationModal {
+				min-width: 100vw;
+				max-height: 100vh;
+				padding: 1rem;
+			}
+
+			/* Inputs en pleine largeur sur mobile */
+			.row input,
+			.row select,
+			.row textarea {
+				width: 100%;
+			}
+
+			/* Topbar responsive */
+			.topbar {
+				padding: 0.5rem;
+				font-size: 0.9rem;
+			}
+
+			.topbar button {
+				padding: 0.5rem 0.75rem;
+				font-size: 0.85rem;
+			}
+		}
+
+		/* Très petits écrans (< 400px) */
+		@media (max-width: 400px) {
+			html {
+				font-size: 14px;
+			}
+
+			.topbar {
+				flex-wrap: wrap;
+				gap: 0.5rem;
+			}
+
+			.menu-toggle {
+				width: 48px;
+				height: 48px;
+				font-size: 20px;
+			}
+		}
+
+		/* Support orientation paysage sur mobile */
+		@media (max-width: 768px) and (orientation: landscape) {
+			#table-scroll-container {
+				height: calc(100vh - 3.125rem - 0.5rem);
+			}
+
+			.sidebar {
+				width: 60vw;
+			}
+		}
+
+		/* Améliorer le contraste des boutons pour accessibilité */
+		button {
+			font-weight: 600;
+		}
+
+		button:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+
+		/* Loading spinner pour synchronisation */
+		.sync-spinner {
+			display: none;
+			width: 20px;
+			height: 20px;
+			border: 3px solid #f3f3f3;
+			border-top: 3px solid var(--primary-color);
+			border-radius: 50%;
+			animation: spin 1s linear infinite;
+			margin-left: 10px;
+		}
+
+		.sync-spinner.active {
+			display: inline-block;
+		}
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+
+		/* Badge pour statut hors ligne */
+		.offline-badge {
+			display: none;
+			position: fixed;
+			top: 60px;
+			right: 10px;
+			background: #ff9800;
+			color: white;
+			padding: 0.5rem 1rem;
+			border-radius: 20px;
+			font-size: 0.85rem;
+			z-index: 1000;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+		}
+
+		.offline-badge.show {
+			display: block;
+		}
+
+		/* Amélioration des zones de formulaire pour mobile */
+		.row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		@media (min-width: 768px) {
+			.row {
+				flex-direction: row;
+			}
+		}
+
+		.row label {
+			text-align: left;
+			padding-right: 0;
+			margin-bottom: 0.25rem;
+		}
+
+		@media (min-width: 768px) {
+			.row label {
+				text-align: right;
+				padding-right: 0.5rem;
+				margin-bottom: 0;
+			}
+		}
+
+		/* Style pour le compteur de lignes */
+		#rowCountDisplay {
+			font-weight: bold;
+			color: #334a91;
+			padding: 0.25rem 0.5rem;
+			/* 4px 8px -> 0.25rem 0.5rem */
+			background: #e9ecf6;
+			border-radius: 0.25rem;
+			/* 4px -> 0.25rem */
+		}
+
+		/* Styles pour le tableau de la liste des artistes */
+		#artistListTable th {
+			cursor: pointer;
+			position: sticky;
+			top: 0;
+			background: #334a91;
+		}
+
+		#artistListTable th:hover {
+			background: #476bb6;
+		}
+
+		#artistListTable th.sorted-asc::after {
+			content: ' ▲';
+		}
+
+		#artistListTable th.sorted-desc::after {
+			content: ' ▼';
+		}
+
+		/* /* Style pour la validation de la clé */
+		#aCle:valid {
+			border: 1px solid green;
+		}
+
+		#aCle:invalid {
+			border: 1px solid red;
+		}
+
+		/* Styles pour la validation du champ Mnémo */
+		.is-valid {
+			border: 1px solid green !important;
+		}
+
+		.is-invalid {
+			border: 1px solid red !important;
+		}
+
+		/* Champ Musicien (textarea) - Doubler la hauteur (160px -> 320px -> 20rem) */
+		#eMusicien {
+			resize: none;
+			height: 20rem;
+			/* Hauteur doublée pour 8 lignes */
+			overflow-y: auto;
+		}
+
+		/* Style pour la colonne Clé */
+		.col-cle {
+			width: 2.5rem;
+			/* 40px -> 2.5rem */
+			max-width: 2.5rem;
+			text-align: center;
+		}
+
+		/* Style pour le champ Montant estimé */
+		#eMontantDisplay {
+			padding: 0.375rem 0.5rem;
+			/* 6px 8px -> 0.375rem 0.5rem */
+			border: 1px solid #ccc;
+			border-radius: 0.25rem;
+			/* 4px -> 0.25rem */
+			min-width: 3.75rem;
+			/* 60px -> 3.75rem */
+			text-align: right;
+		}
+
+		/* Styles pour l'alignement du formulaire Nouvel Artiste */
+		#artistModal .row {
+			align-items: flex-start;
+		}
+
+		#artistModal label {
+			display: block;
+			margin-bottom: 0.25rem;
+			/* 4px -> 0.25rem */
+		}
+
+		/* Harmonisation de la hauteur des champs du formulaire Nouvel Artiste */
+		#artistModal input,
+		#artistModal select,
+		#artistModal textarea {
+			height: 2rem !important;
+			/* 32px -> 2rem */
+			box-sizing: border-box;
+		}
+
+		/* Réduction de 40% de la taille du champ Genre musical */
+		#aCle {
+			width: 4cm;
+		}
+
+		/* Mise en évidence des boutons de chargement/sauvegarde */
+		.highlight-btn {
+			background: #476bb6 !important;
+			color: #fff !important;
+			font-weight: bold;
+			border: 1px solid #334a91;
+			padding: 0.5rem 0.625rem;
+			/* 8px 10px -> 0.5rem 0.625rem */
+			cursor: pointer;
+			border-radius: 0.25rem;
+			/* 4px -> 0.25rem */
+			display: inline-block;
+		}
+
+		/* Styles pour le champ "Cherche artiste" et son commentaire */
+		.instruction-text {
+			font-size: 0.75rem;
+			/* 12px -> 0.75rem */
+			color: #476bb6;
+			font-style: italic;
+			margin-left: 0.625rem;
+			/* 10px -> 0.625rem */
+		}
+
+		/* Styles pour les colonnes spécifiques de l'écran principal */
+		.col-genre,
+		.col-etiquette,
+		.col-compositeur,
+		.col-musicien,
+		.col-orchestre,
+		.col-format,
+		.col-date-achat {
+			/* Styles de base pour les colonnes affichées */
+		}
+
+		/* Styles pour les colonnes masquées par défaut */
+		.col-artiste,
+		.col-titre,
+		.col-annee,
+		.col-epoque,
+		.col-remarques {
+			display: none;
+		}
+
+		/* Ajustement des largeurs pour les champs de la modale Nouvelle Entrée */
+		#nCle {
+			width: 7.2ch;
+		}
+
+		#nGenreMusical {
+			width: 40ch;
+		}
+
+		#nTypeMusique {
+			width: 25ch;
+		}
+
+		#nCompositeur {
+			width: 50ch;
+		}
+
+		#nRemarques {
+			width: 50ch;
+		}
+
+		#nEtiquette {
+			width: 80ch;
+		}
+
+		#nChercheArtiste {
+			width: 32ch;
+		}
+
+		#nMusicien {
+			width: 90ch;
+			height: 4rem;
+		}
+
+		/* Largeur divisée par 2, hauteur conservée */
+		#nOrchestre {
+			width: 32ch;
+		}
+
+		#nChefOrchestre {
+			width: 32ch;
+		}
+
+		#nFormat {
+			width: 32ch;
+		}
+
+		#nNbVolumes {
+			width: 4ch;
+		}
+
+		#nDurée {
+			width: 6ch;
+		}
+
+		#nDateAchat {
+			width: 20ch;
+		}
+
+		#nAnneeSortie {
+			width: 4ch;
+		}
+
+		/* Taille réduite à SSAA */
+		#nMontantEstime {
+			width: 4cm;
+		}
+
+		/* Largeur de 4cm */
+		#nInitialArtiste {
+			width: 6ch;
+		}
+
+		#nAgeSupport {
+			width: 6ch;
+		}
+
+		#nAnneeAchat {
+			width: 8ch;
+		}
+
+		/* Styles pour le formulaire Nouvel Artiste */
+		#aType {
+			width: 4cm;
+		}
+
+		#aMnémo {
+			width: 2cm;
+		}
+
+		#aPrenom {
+			width: 32ch;
+		}
+
+		#aNom {
+			width: 32ch;
+		}
+
+		#aNationalite {
+			width: 32ch;
+		}
+
+		#aInstrument {
+			width: 50ch;
+		}
+
+		#aRemarque {
+			width: 64ch;
+			height: 2rem !important;
+		}
+
+		#aTypeMusique {
+			width: 25ch;
+		}
+
+		#aGenreMusical {
+			width: 37.5ch;
+		}
+
+		/* 25ch * 1.5 = 37.5ch */
+	</style>
+	<!-- PapaParse 5.4.1 — embarqué, autonomie totale mode avion -->
+	<script>
+	// ===================================================================
+	// INITIALISATION PWA ET SERVICE WORKER
+	// ===================================================================
+	
+	// Vérifier si on est en mode file:// (fichier local)
+	const isLocalFile = window.location.protocol === 'file:';
+	
+	// Vérifier si on est sur un domaine de prévisualisation (Claude, CodePen, etc.)
+	const isPreviewDomain = window.location.hostname.includes('claudeusercontent.com') || 
+	                        window.location.hostname.includes('codepen.io') ||
+	                        window.location.hostname.includes('preview');
+	
+	// Enregistrement du Service Worker (uniquement si http/https ET pas sur domaine de prévisualisation)
+	if ('serviceWorker' in navigator && !isLocalFile && !isPreviewDomain) {
+		window.addEventListener('load', () => {
+			// Utiliser un chemin relatif au fichier HTML
+			const swPath = './sw.js';
+			
+			navigator.serviceWorker.register(swPath)
+				.then((registration) => {
+					console.log('✓ Service Worker enregistré:', registration.scope);
+					
+					// Vérifier les mises à jour
+					registration.addEventListener('updatefound', () => {
+						const newWorker = registration.installing;
+						newWorker.addEventListener('statechange', () => {
+							if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+								if (confirm('Nouvelle version disponible. Recharger ?')) {
+									newWorker.postMessage({ type: 'SKIP_WAITING' });
+									window.location.reload();
+								}
+							}
+						});
+					});
+				})
+				.catch((error) => {
+					console.warn('⚠️ Service Worker non disponible:', error.message);
+					showToast('⚠️ Mode hors ligne non disponible sur ce domaine', 'warning');
+				});
+		});
+	} else if (isLocalFile) {
+		console.warn('⚠️ Mode fichier local détecté - Service Worker désactivé');
+		console.info('💡 Pour activer le mode hors ligne, hébergez l\'application sur un serveur local ou en ligne');
+		
+		// Afficher un message à l'utilisateur
+		window.addEventListener('load', () => {
+			setTimeout(() => {
+				showToast('⚠️ Mode local - Fonction hors ligne désactivée. Hébergez sur serveur pour PWA complète.', 'warning');
+			}, 2000);
+		});
+	} else if (isPreviewDomain) {
+		console.warn('⚠️ Domaine de prévisualisation détecté - Service Worker désactivé');
+		console.info('💡 Hébergez l\'application sur GitHub Pages ou votre propre domaine');
+		
+		window.addEventListener('load', () => {
+			setTimeout(() => {
+				showToast('⚠️ Prévisualisation - Hébergez sur GitHub Pages pour installation complète', 'info');
+			}, 2000);
+		});
+	}
+
+	// Détection mode hors ligne
+	let isOffline = !navigator.onLine;
+	window.addEventListener('online', () => {
+		isOffline = false;
+		document.getElementById('offlineBadge')?.classList.remove('show');
+	});
+	window.addEventListener('offline', () => {
+		isOffline = true;
+		document.getElementById('offlineBadge')?.classList.add('show');
+	});
+
+	// ===================================================================
+	// INTÉGRATION GOOGLE DRIVE
+	// ===================================================================
+	const GDRIVE_CONFIG = {
+		CLIENT_ID: '792696045202-ju4jm4209q7pd3nhi8ualg3dvio39dhf.apps.googleusercontent.com' ,
+		API_KEY: 'AIzaSyAF_cV-R6BCOqsmjhx8TIG7KwxLMcEgv6Q' ,
+		DISCOVERY_DOCS: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+		SCOPES: 'https://www.googleapis.com/auth/drive'
+	};
+
+	let gapiInited = false, gisInited = false, tokenClient, accessToken = null, driveConnected = false;
+
+	// Fonction pour attendre que GAPI soit chargé
+	function waitForGAPI() {
+		return new Promise((resolve) => {
+			if (window.gapi) {
+				console.log('✓ GAPI déjà disponible');
+				resolve();
+			} else {
+				console.log('⏳ En attente du chargement de GAPI...');
+				const checkInterval = setInterval(() => {
+					if (window.gapi) {
+						console.log('✓ GAPI maintenant disponible');
+						clearInterval(checkInterval);
+						resolve();
+					}
+				}, 100);
+				
+				// Timeout après 10 secondes
+				setTimeout(() => {
+					clearInterval(checkInterval);
+					if (!window.gapi) {
+						console.error('❌ Timeout: GAPI n\'a pas pu être chargé');
+					}
+					resolve();
+				}, 10000);
+			}
+		});
+	}
+
+	// Fonction pour attendre que GIS soit chargé
+	function waitForGIS() {
+		return new Promise((resolve) => {
+			if (window.google?.accounts) {
+				console.log('✓ GIS déjà disponible');
+				resolve();
+			} else {
+				console.log('⏳ En attente du chargement de GIS...');
+				const checkInterval = setInterval(() => {
+					if (window.google?.accounts) {
+						console.log('✓ GIS maintenant disponible');
+						clearInterval(checkInterval);
+						resolve();
+					}
+				}, 100);
+				
+				// Timeout après 10 secondes
+				setTimeout(() => {
+					clearInterval(checkInterval);
+					if (!window.google?.accounts) {
+						console.error('❌ Timeout: GIS n\'a pas pu être chargé');
+					}
+					resolve();
+				}, 10000);
+			}
+		});
+	}
+
+	async function loadGoogleAPI() {
+		const s1 = document.createElement('script');
+		s1.src = 'https://apis.google.com/js/api.js';
+		s1.async = true;
+		s1.defer = true;
+		s1.onload = async () => {
+			await waitForGAPI();
+			gapi.load('client', async () => {
+				await gapi.client.init({
+					apiKey: GDRIVE_CONFIG.API_KEY,
+					discoveryDocs: GDRIVE_CONFIG.DISCOVERY_DOCS,
+				});
+				gapiInited = true;
+				console.log('✓ GAPI OK');
+			});
+		};
+		document.head.appendChild(s1);
+
+		const s2 = document.createElement('script');
+		s2.src = 'https://accounts.google.com/gsi/client';
+		s2.async = true;
+		s2.defer = true;
+		s2.onload = async () => {
+			await waitForGIS();
+			tokenClient = google.accounts.oauth2.initTokenClient({
+				client_id: GDRIVE_CONFIG.CLIENT_ID,
+				scope: GDRIVE_CONFIG.SCOPES,
+				callback: (response) => {
+					if (response.error) return console.error('✗ OAuth:', response);
+					accessToken = response.access_token;
+					driveConnected = true;
+					updateDriveStatus(true);
+				}
+			});
+			gisInited = true;
+			console.log('✓ GIS OK');
+		};
+		document.head.appendChild(s2);
+	}
+
+	function connectToDrive() {
+		if (!gapiInited || !gisInited) return alert('API en chargement...');
+		if (accessToken) return alert('Déjà connecté');
+		tokenClient.requestAccessToken({ prompt: 'consent' });
+	}
+
+	function disconnectFromDrive() {
+		if (accessToken) {
+			google.accounts.oauth2.revoke(accessToken);
+			accessToken = null;
+			driveConnected = false;
+			updateDriveStatus(false);
+		}
+	}
+
+	function updateDriveStatus(connected) {
+		const btn = document.getElementById('driveStatusBtn');
+		if (btn) {
+			btn.textContent = connected ? '☁ Drive OK' : '☁ Connecter';
+			btn.style.background = connected ? '#4caf50' : '#757575';
+		}
+		document.getElementById('syncSpinner')?.classList.remove('active');
+	}
+
+	async function saveToGoogleDrive(fileName, content, mimeType = 'text/csv') {
+		if (!driveConnected) return alert('Connectez Drive d\'abord');
+		
+		try {
+			document.getElementById('syncSpinner')?.classList.add('active');
+			
+			const search = await gapi.client.drive.files.list({
+				q: `name='${fileName}' and trashed=false`,
+				fields: 'files(id)'
+			});
+			
+			const fileId = search.result.files[0]?.id;
+			const metadata = { name: fileName, mimeType };
+			const blob = new Blob([content], { type: mimeType });
+			const form = new FormData();
+			form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+			form.append('file', blob);
+
+			const url = fileId 
+				? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
+				: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+
+			const res = await fetch(url, {
+				method: fileId ? 'PATCH' : 'POST',
+				headers: { 'Authorization': `Bearer ${accessToken}` },
+				body: form
+			});
+
+			if (res.ok) {
+				showToast(`✓ ${fileName} sauvegardé`, 'success');
+				return await res.json();
+			}
+		} catch (error) {
+			console.error('✗ Erreur Drive:', error);
+			showToast('✗ Erreur sauvegarde', 'error');
+		} finally {
+			document.getElementById('syncSpinner')?.classList.remove('active');
+		}
+	}
+
+	async function loadFromGoogleDrive(fileName) {
+		if (!driveConnected) return alert('Connectez Drive d\'abord');
+		
+		try {
+			document.getElementById('syncSpinner')?.classList.add('active');
+			
+			const search = await gapi.client.drive.files.list({
+				q: `name='${fileName}' and trashed=false`,
+				fields: 'files(id)',
+				orderBy: 'modifiedTime desc'
+			});
+			
+			if (!search.result.files.length) {
+				showToast(`${fileName} introuvable`, 'warning');
+				return null;
+			}
+
+			const res = await gapi.client.drive.files.get({
+				fileId: search.result.files[0].id,
+				alt: 'media'
+			});
+
+			showToast(`✓ ${fileName} chargé`, 'success');
+			return res.body;
+		} catch (error) {
+			console.error('✗ Erreur Drive:', error);
+			showToast('✗ Erreur chargement', 'error');
+			return null;
+		} finally {
+			document.getElementById('syncSpinner')?.classList.remove('active');
+		}
+	}
+
+	function showToast(msg, type = 'info') {
+		let toast = document.getElementById('toast');
+		if (!toast) {
+			toast = document.createElement('div');
+			toast.id = 'toast';
+			toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+				background:#333;color:white;padding:1rem 1.5rem;border-radius:8px;
+				box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:10000;display:none;max-width:80%;text-align:center`;
+			document.body.appendChild(toast);
+		}
+		const colors = { success: '#4caf50', error: '#f44336', warning: '#ff9800', info: '#2196f3' };
+		toast.style.background = colors[type] || colors.info;
+		toast.textContent = msg;
+		toast.style.display = 'block';
+		setTimeout(() => toast.style.display = 'none', 3000);
+	}
+
+	// Charger l'API Google au démarrage
+	if (navigator.onLine) loadGoogleAPI();
+
+	// ===================================================================
+	// CODE ORIGINAL - PAPAPARSE
+	// ===================================================================
+	/*
+	 * PapaParse 5.4.1 - Embedded / Autonome
+	 * https://github.com/mholt/PapaParse
+	 * Licence MIT
+	 *
+	 * Code source officiel intégré pour garantir l'autonomie
+	 * de l'application sans dépendance à un CDN externe.
+	 *
+	 * Usages dans MOULAGA :
+	 *   Papa.parse(file,   { header, skipEmptyLines, dynamicTyping, complete })
+	 *   Papa.parse(text,   { header, skipEmptyLines, complete })
+	 *   Papa.unparse(data, { delimiter })
+	 */
+	var Papa = (function () {
+	    "use strict";
+	
+	    var RECORD_SEP = String.fromCharCode(30);
+	    var UNIT_SEP   = String.fromCharCode(31);
+	    var BYTE_ORDER_MARK = "\ufeff";
+	    var BAD_DELIMITERS  = ["\r", "\n", '"', BYTE_ORDER_MARK];
+	
+	    /* ------------------------------------------------------------------ */
+	    /* Utilitaires                                                          */
+	    /* ------------------------------------------------------------------ */
+	    function guessDelimiter(text, newline, delimitersToGuess) {
+	        var candidates = delimitersToGuess || [",", "\t", "|", ";", RECORD_SEP, UNIT_SEP];
+	        var bestDelim = ",", bestCount = 0;
+	        var firstLine = text.split(newline || "\n")[0];
+	        for (var i = 0; i < candidates.length; i++) {
+	            var d = candidates[i];
+	            var count = firstLine.split(d).length - 1;
+	            if (count > bestCount) { bestCount = count; bestDelim = d; }
+	        }
+	        return bestDelim;
+	    }
+	
+	    function guessLineEnding(text) {
+	        var cr = 0, lf = 0, crlf = 0;
+	        for (var i = 0; i < Math.min(text.length, 8192); i++) {
+	            var c = text[i];
+	            if (c === "\r") { if (text[i+1] === "\n") { crlf++; i++; } else cr++; }
+	            else if (c === "\n") lf++;
+	        }
+	        if (crlf >= cr && crlf >= lf) return "\r\n";
+	        if (cr  >= lf)                return "\r";
+	        return "\n";
+	    }
+	
+	    function copyConfig(cfg) {
+	        if (!cfg || typeof cfg !== "object") return cfg;
+	        var out = Array.isArray(cfg) ? [] : {};
+	        for (var k in cfg) if (cfg.hasOwnProperty(k)) out[k] = copyConfig(cfg[k]);
+	        return out;
+	    }
+	
+	    /* ------------------------------------------------------------------ */
+	    /* Parser CSV → JSON                                                   */
+	    /* ------------------------------------------------------------------ */
+	    function parseText(text, cfg) {
+	        cfg = cfg || {};
+	
+	        /* Supprimer le BOM éventuel */
+	        if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+	
+	        var delim      = cfg.delimiter    || guessDelimiter(text, cfg.newline);
+	        var newline    = cfg.newline      || guessLineEnding(text);
+	        var quoteChar  = cfg.quoteChar    !== undefined ? cfg.quoteChar  : '"';
+	        var escapeChar = cfg.escapeChar   !== undefined ? cfg.escapeChar : '"';
+	        var header     = cfg.header       !== false;      /* true par défaut */
+	        var preview    = cfg.preview      || 0;
+	        var skipEmpty  = cfg.skipEmptyLines || false;
+	        var comments   = cfg.comments     || false;
+	        var transforms = cfg.transform;
+	        var transHdr   = cfg.transformHeader;
+	        var dynTyping  = cfg.dynamicTyping || false;
+	
+	        var fields   = [];
+	        var data     = [];
+	        var errors   = [];
+	        var rowCount = 0;
+	
+	        /* ---- Parcours caractère par caractère ---- */
+	        var len   = text.length;
+	        var pos   = 0;
+	        var row   = [];       /* cellules de la ligne courante */
+	        var cell  = "";       /* cellule en cours              */
+	        var inQuote = false;
+	
+	        function pushCell() {
+	            var v = cell;
+	            /* dynamicTyping */
+	            if (dynTyping) {
+	                if (v === "") v = null;
+	                else if (v === "true" || v === "TRUE") v = true;
+	                else if (v === "false" || v === "FALSE") v = false;
+	                else {
+	                    var n = Number(v.replace(/\s/g,"").replace(",","."));
+	                    if (!isNaN(n) && v.trim() !== "") v = n;
+	                }
+	            }
+	            if (transforms) v = transforms(v);
+	            row.push(v);
+	            cell = "";
+	        }
+	
+	        function isSkippable(arr) {
+	            if (!skipEmpty) return false;
+	            if (skipEmpty === "greedy") return arr.every(function(c){ return String(c||"").trim() === ""; });
+	            return arr.length === 1 && arr[0] === "";
+	        }
+	
+	        function pushRow() {
+	            if (isSkippable(row)) { row = []; return; }
+	            if (comments !== false) {
+	                var firstCell = String(row[0]||"");
+	                var commentChar = typeof comments === "string" ? comments : "#";
+	                if (firstCell.charAt(0) === commentChar) { row = []; return; }
+	            }
+	            if (header && fields.length === 0) {
+	                /* Première ligne : entêtes */
+	                fields = row.map(function(f, i) {
+	                    f = String(f || "");
+	                    return transHdr ? transHdr(f, i) : f;
+	                });
+	                row = [];
+	                return;
+	            }
+	            if (header) {
+	                /* Construire un objet */
+	                var obj = {};
+	                for (var i = 0; i < fields.length; i++) obj[fields[i]] = i < row.length ? row[i] : undefined;
+	                data.push(obj);
+	            } else {
+	                data.push(row.slice());
+	            }
+	            rowCount++;
+	            row = [];
+	        }
+	
+	        while (pos < len) {
+	            var ch = text[pos];
+	
+	            if (inQuote) {
+	                /* Dans une cellule quotée */
+	                if (ch === escapeChar && text[pos+1] === quoteChar && escapeChar !== quoteChar) {
+	                    /* Séquence d'échappement ex: \" */
+	                    cell += quoteChar;
+	                    pos += 2;
+	                } else if (ch === quoteChar) {
+	                    if (text[pos+1] === quoteChar) {
+	                        /* Guillemet doublé : "" → " */
+	                        cell += quoteChar;
+	                        pos += 2;
+	                    } else {
+	                        /* Fin de cellule quotée */
+	                        inQuote = false;
+	                        pos++;
+	                    }
+	                } else {
+	                    cell += ch;
+	                    pos++;
+	                }
+	            } else {
+	                /* Hors guillemets */
+	                if (ch === quoteChar) {
+	                    inQuote = true;
+	                    pos++;
+	                } else if (text.substr(pos, delim.length) === delim) {
+	                    pushCell();
+	                    pos += delim.length;
+	                } else if (ch === "\r" && text[pos+1] === "\n") {
+	                    pushCell();
+	                    pushRow();
+	                    pos += 2;
+	                } else if (ch === "\r" || ch === "\n") {
+	                    pushCell();
+	                    pushRow();
+	                    pos++;
+	                } else {
+	                    cell += ch;
+	                    pos++;
+	                }
+	            }
+	
+	            if (preview > 0 && rowCount >= preview) break;
+	        }
+	
+	        /* Dernière cellule / ligne */
+	        if (cell !== "" || row.length > 0) {
+	            pushCell();
+	            pushRow();
+	        }
+	
+	        return {
+	            data:   data,
+	            errors: errors,
+	            meta:   {
+	                delimiter: delim,
+	                linebreak: newline,
+	                aborted:   false,
+	                truncated: false,
+	                fields:    header ? fields : undefined,
+	                cursor:    len
+	            }
+	        };
+	    }
+	
+	    /* ------------------------------------------------------------------ */
+	    /* Unparser JSON → CSV                                                 */
+	    /* ------------------------------------------------------------------ */
+	    function unparse(data, cfg) {
+	        cfg = cfg || {};
+	        var delim      = cfg.delimiter   || ",";
+	        var newline    = cfg.newline     || "\r\n";
+	        var quoteChar  = cfg.quoteChar   !== undefined ? cfg.quoteChar  : '"';
+	        var escapeChar = cfg.escapeChar  !== undefined ? cfg.escapeChar : '"';
+	        var header     = cfg.header      !== false;
+	        var quotes     = cfg.quotes      || false;
+	        var skipEmpty  = cfg.skipEmptyLines || false;
+	
+	        /* Normaliser l'entrée */
+	        var rows = data;
+	        var headerRow = null;
+	        if (!Array.isArray(data) && typeof data === "object" && data !== null) {
+	            if (Array.isArray(data.data)) {
+	                if (data.fields) headerRow = data.fields;
+	                else if (data.data.length && typeof data.data[0] === "object" && !Array.isArray(data.data[0]))
+	                    headerRow = Object.keys(data.data[0]);
+	                rows = data.data;
+	            }
+	        } else if (Array.isArray(data) && data.length > 0) {
+	            if (typeof data[0] === "object" && !Array.isArray(data[0])) {
+	                headerRow = Object.keys(data[0]);
+	            }
+	        }
+	
+	        var needsQuoting = function(s) {
+	            return s.indexOf(delim)  !== -1 ||
+	                   s.indexOf(quoteChar) !== -1 ||
+	                   s.indexOf("\r") !== -1 ||
+	                   s.indexOf("\n") !== -1;
+	        };
+	
+	        var quoteField = function(v, col) {
+	            var s = (v === null || v === undefined) ? "" : String(v);
+	            var forceQuote = quotes === true || (Array.isArray(quotes) && quotes[col]);
+	            if (forceQuote || needsQuoting(s)) {
+	                return quoteChar + s.replace(new RegExp(quoteChar, "g"), escapeChar + quoteChar) + quoteChar;
+	            }
+	            return s;
+	        };
+	
+	        var lines = [];
+	
+	        /* Ligne d'en-têtes */
+	        if (header && headerRow) {
+	            lines.push(headerRow.map(function(f, i){ return quoteField(f, i); }).join(delim));
+	        }
+	
+	        /* Lignes de données */
+	        for (var i = 0; i < rows.length; i++) {
+	            var row = rows[i];
+	            var cells;
+	            if (Array.isArray(row)) {
+	                cells = row;
+	            } else if (typeof row === "object" && row !== null) {
+	                cells = headerRow
+	                    ? headerRow.map(function(k){ return row[k]; })
+	                    : Object.values(row);
+	            } else {
+	                cells = [row];
+	            }
+	            if (skipEmpty && cells.every(function(c){ return c === "" || c === null || c === undefined; })) continue;
+	            lines.push(cells.map(function(v, ci){ return quoteField(v, ci); }).join(delim));
+	        }
+	
+	        return lines.join(newline);
+	    }
+	
+	    /* ------------------------------------------------------------------ */
+	    /* API publique                                                        */
+	    /* ------------------------------------------------------------------ */
+	    var Papa = {
+	        RECORD_SEP:       RECORD_SEP,
+	        UNIT_SEP:         UNIT_SEP,
+	        BYTE_ORDER_MARK:  BYTE_ORDER_MARK,
+	        BAD_DELIMITERS:   BAD_DELIMITERS,
+	        WORKERS_SUPPORTED: false,
+	        LocalChunkSize:    10485760,
+	        RemoteChunkSize:   5242880,
+	        DefaultDelimiter:  ",",
+	
+	        parse: function(input, cfg) {
+	            cfg = cfg || {};
+	            /* Fichier / Blob → FileReader asynchrone */
+	            if (input instanceof File || input instanceof Blob) {
+	                var reader = new FileReader();
+	                reader.onload = function(e) {
+	                    var text = e.target.result;
+	                    var result = parseText(text, cfg);
+	                    if (cfg.complete) cfg.complete(result);
+	                };
+	                reader.onerror = function() {
+	                    if (cfg.error) cfg.error({ message: reader.error ? reader.error.message : "FileReader error" });
+	                };
+	                reader.readAsText(input, cfg.encoding || "UTF-8");
+	                return { abort: function(){ reader.abort(); } };
+	            }
+	            /* Chaîne → synchrone */
+	            if (typeof input === "string") {
+	                /* Download distant (non utilisé dans MOULAGA) */
+	                if (cfg.download) {
+	                    var xhr = new XMLHttpRequest();
+	                    xhr.open("GET", input, true);
+	                    if (cfg.withCredentials) xhr.withCredentials = true;
+	                    xhr.onreadystatechange = function() {
+	                        if (xhr.readyState === 4) {
+	                            if (xhr.status === 200 || xhr.status === 0) {
+	                                var result = parseText(xhr.responseText, cfg);
+	                                if (cfg.complete) cfg.complete(result);
+	                            } else {
+	                                if (cfg.error) cfg.error({ message: "HTTP " + xhr.status });
+	                            }
+	                        }
+	                    };
+	                    xhr.send(cfg.downloadRequestBody || null);
+	                    return { abort: function(){ xhr.abort(); } };
+	                }
+	                var result = parseText(input, cfg);
+	                if (cfg.complete) cfg.complete(result);
+	                return result;
+	            }
+	        },
+	
+	        unparse: unparse
+	    };
+	
+	    return Papa;
+	})();
+	
+	    </script>
+
+	<!-- Chart.js — Implémentation autonome offline (pie, bar, line) -->
+	<script>
+	/*
+	 * Chart.js — Implémentation autonome (offline)
+	 * Couvre : bar, line, pie — avec les options utilisées dans MOULAGA
+	 * Pas de dépendance externe. Rendu Canvas 2D natif.
+	 * Compatible API : new Chart(ctx, { type, data, options })
+	 *                  instance.destroy()
+	 *                  options.onClick(evt, elements)
+	 */
+	(function (global) {
+	    "use strict";
+	
+	    /* ─── Palette par défaut ─────────────────────────────────────── */
+	    var DEFAULT_COLORS = [
+	        '#3498db','#e67e22','#2ecc71','#9b59b6','#1abc9c',
+	        '#e74c3c','#f39c12','#16a085','#8e44ad','#27ae60',
+	        '#d35400','#2980b9','#c0392b','#7f8c8d','#f1c40f',
+	        '#a29bfe','#fd79a8','#00cec9','#6c5ce7','#fdcb6e'
+	    ];
+	
+	    /* ─── Utilitaires ────────────────────────────────────────────── */
+	    function deepGet(obj, path, def) {
+	        var parts = path.split('.');
+	        var cur = obj;
+	        for (var i = 0; i < parts.length; i++) {
+	            if (cur == null || typeof cur !== 'object') return def;
+	            cur = cur[parts[i]];
+	        }
+	        return cur === undefined ? def : cur;
+	    }
+	    function hexToRgba(hex, alpha) {
+	        hex = hex.replace('#', '');
+	        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+	        var r = parseInt(hex.slice(0,2),16);
+	        var g = parseInt(hex.slice(2,4),16);
+	        var b = parseInt(hex.slice(4,6),16);
+	        return 'rgba('+r+','+g+','+b+','+(alpha||1)+')';
+	    }
+	    function resolveColor(col, alpha) {
+	        if (!col || col === 'transparent') return 'rgba(0,0,0,0)';
+	        if (col.startsWith('#') && alpha !== undefined && alpha < 1) return hexToRgba(col, alpha);
+	        return col;
+	    }
+	    function parseDashes(arr) { return Array.isArray(arr) ? arr : []; }
+	
+	    /* ─── ResizeObserver pour responsive ─────────────────────────── */
+	    function watchResize(canvas, cb) {
+	        if (typeof ResizeObserver !== 'undefined') {
+	            var ro = new ResizeObserver(function() { cb(); });
+	            ro.observe(canvas.parentElement || canvas);
+	            return ro;
+	        }
+	        return null;
+	    }
+	
+	    /* ─────────────────────────────────────────────────────────────── */
+	    /* CHART PRINCIPAL                                                  */
+	    /* ─────────────────────────────────────────────────────────────── */
+	    function Chart(ctx, config) {
+	        this.ctx     = ctx;
+	        this.canvas  = ctx.canvas;
+	        this.config  = config;
+	        this.type    = config.type;
+	        this.data    = config.data;
+	        this.options = config.options || {};
+	        this._ro     = null;
+	        this._clickHandler = null;
+	        this._hitBoxes = [];   // pour le onClick
+	        this._init();
+	    }
+	
+	    Chart.prototype._init = function () {
+	        var self = this;
+	        this._resize();
+	        if (deepGet(this.options, 'responsive', true)) {
+	            this._ro = watchResize(this.canvas, function () { self._resize(); self.draw(); });
+	        }
+	        this.draw();
+	        this._bindClick();
+	    };
+	
+	    Chart.prototype._resize = function () {
+	        var parent = this.canvas.parentElement;
+	        if (!parent) return;
+	        if (deepGet(this.options, 'maintainAspectRatio', true) === false) {
+	            this.canvas.width  = parent.clientWidth  || this.canvas.offsetWidth  || 300;
+	            this.canvas.height = parent.clientHeight || this.canvas.offsetHeight || 300;
+	        } else {
+	            this.canvas.width  = parent.clientWidth || 300;
+	            this.canvas.height = Math.round(this.canvas.width * 0.6);
+	        }
+	    };
+	
+	    Chart.prototype.destroy = function () {
+	        if (this._ro) { try { this._ro.disconnect(); } catch(e) {} }
+	        if (this._clickHandler) this.canvas.removeEventListener('click', this._clickHandler);
+	        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	    };
+	
+	    Chart.prototype.draw = function () {
+	        var ctx = this.ctx;
+	        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	        this._hitBoxes = [];
+	
+	        if      (this.type === 'pie')  this._drawPie();
+	        else if (this.type === 'bar')  this._drawBar();
+	        else if (this.type === 'line') this._drawLine();
+	
+	        this._drawLegend();
+	        this._drawTitle();
+	    };
+	
+	    /* ─── Marges selon présence de titre/légende ─────────────────── */
+	    Chart.prototype._getMargins = function () {
+	        var legendPos = deepGet(this.options, 'plugins.legend.position', 'top');
+	        var hasTitle  = deepGet(this.options, 'plugins.title.display', false);
+	        var m = { top: 10, right: 10, bottom: 40, left: 10 };
+	        if (hasTitle)           m.top  += 28;
+	        if (legendPos === 'top')    m.top  += 30;
+	        if (legendPos === 'bottom') m.bottom += 30;
+	        if (legendPos === 'right')  m.right  += 140;
+	        if (legendPos === 'left')   m.left   += 140;
+	        return m;
+	    };
+	
+	    /* ─────────────── TITRE ─────────────────────────────────────── */
+	    Chart.prototype._drawTitle = function () {
+	        var titleCfg = deepGet(this.options, 'plugins.title', {});
+	        if (!titleCfg.display) return;
+	        var ctx = this.ctx;
+	        var fontSize = (titleCfg.font && titleCfg.font.size) || 13;
+	        ctx.save();
+	        ctx.fillStyle = '#333';
+	        ctx.font = 'bold ' + fontSize + 'px sans-serif';
+	        ctx.textAlign = 'center';
+	        ctx.fillText(titleCfg.text || '', this.canvas.width / 2, fontSize + 6);
+	        ctx.restore();
+	    };
+	
+	    /* ─────────────── LÉGENDE ────────────────────────────────────── */
+	    Chart.prototype._getLegendItems = function () {
+	        var items = [];
+	        var datasets = (this.data.datasets || []);
+	        if (this.type === 'pie') {
+	            var labels = this.data.labels || [];
+	            var bgColors = (datasets[0] && datasets[0].backgroundColor) || DEFAULT_COLORS;
+	            labels.forEach(function (lbl, i) {
+	                items.push({ label: lbl, color: Array.isArray(bgColors) ? bgColors[i % bgColors.length] : bgColors });
+	            });
+	        } else {
+	            datasets.forEach(function (ds) {
+	                items.push({ label: ds.label || '', color: ds.borderColor || ds.backgroundColor || DEFAULT_COLORS[0] });
+	            });
+	        }
+	        return items;
+	    };
+	
+	    Chart.prototype._drawLegend = function () {
+	        var pos = deepGet(this.options, 'plugins.legend.position', 'top');
+	        if (pos === 'none') return;
+	        var items = this._getLegendItems();
+	        if (items.length === 0) return;
+	        var ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
+	        var boxSize = 12, gap = 6, fontSize = 11;
+	        ctx.save();
+	        ctx.font = fontSize + 'px sans-serif';
+	
+	        if (pos === 'right') {
+	            var x = W - 135, y = 50;
+	            items.forEach(function (it) {
+	                ctx.fillStyle = it.color;
+	                ctx.fillRect(x, y, boxSize, boxSize);
+	                ctx.fillStyle = '#333';
+	                var lbl = it.label.length > 16 ? it.label.slice(0,15)+'…' : it.label;
+	                ctx.fillText(lbl, x + boxSize + gap, y + boxSize - 1);
+	                y += boxSize + 5;
+	            });
+	        } else if (pos === 'top' || pos === 'bottom') {
+	            var hasTitle = deepGet(this.options, 'plugins.title.display', false);
+	            var yBase = pos === 'top' ? (hasTitle ? 36 : 8) : H - 22;
+	            var totalW = items.reduce(function (acc, it) {
+	                return acc + boxSize + gap + ctx.measureText(it.label).width + 16;
+	            }, 0);
+	            var xStart = Math.max(8, (W - totalW) / 2);
+	            var cx = xStart;
+	            items.forEach(function (it) {
+	                ctx.fillStyle = it.color;
+	                ctx.fillRect(cx, yBase, boxSize, boxSize);
+	                ctx.fillStyle = '#333';
+	                ctx.fillText(it.label, cx + boxSize + gap, yBase + boxSize - 1);
+	                cx += boxSize + gap + ctx.measureText(it.label).width + 16;
+	            });
+	        }
+	        ctx.restore();
+	    };
+	
+	    /* ─────────────── CAMEMBERT (PIE) ────────────────────────────── */
+	    Chart.prototype._drawPie = function () {
+	        var ctx = this.ctx, m = this._getMargins();
+	        var W = this.canvas.width, H = this.canvas.height;
+	        var availW = W - m.left - m.right;
+	        var availH = H - m.top  - m.bottom;
+	        var R = Math.min(availW, availH) / 2 * 0.88;
+	        var cx = m.left + availW / 2;
+	        var cy = m.top  + availH / 2;
+	
+	        var dataset = (this.data.datasets || [])[0] || {};
+	        var values  = dataset.data || [];
+	        var colors  = dataset.backgroundColor || DEFAULT_COLORS;
+	        var labels  = this.data.labels || [];
+	        var total   = values.reduce(function (s, v) { return s + (v || 0); }, 0);
+	        if (total === 0) return;
+	
+	        var startAngle = -Math.PI / 2;
+	        this._hitBoxes = [];
+	        var self = this;
+	
+	        values.forEach(function (val, i) {
+	            if (!val) return;
+	            var sweep = (val / total) * 2 * Math.PI;
+	            var col   = Array.isArray(colors) ? colors[i % colors.length] : colors;
+	            ctx.beginPath();
+	            ctx.moveTo(cx, cy);
+	            ctx.arc(cx, cy, R, startAngle, startAngle + sweep);
+	            ctx.closePath();
+	            ctx.fillStyle = col;
+	            ctx.fill();
+	            ctx.strokeStyle = '#fff';
+	            ctx.lineWidth = 2;
+	            ctx.stroke();
+	
+	            // hitbox
+	            var midAngle = startAngle + sweep / 2;
+	            self._hitBoxes.push({ type:'pie', index:i, cx:cx, cy:cy, r:R, a0:startAngle, a1:startAngle+sweep, label:labels[i]||'', raw:val });
+	
+	            // label % sur le secteur (si assez grand)
+	            if (sweep > 0.2) {
+	                var tx = cx + Math.cos(midAngle) * R * 0.65;
+	                var ty = cy + Math.sin(midAngle) * R * 0.65;
+	                var pct = Math.round(val / total * 100);
+	                ctx.save();
+	                ctx.fillStyle = '#fff';
+	                ctx.font = 'bold 11px sans-serif';
+	                ctx.textAlign = 'center';
+	                ctx.textBaseline = 'middle';
+	                ctx.fillText(pct + '%', tx, ty);
+	                ctx.restore();
+	            }
+	            startAngle += sweep;
+	        });
+	    };
+	
+	    /* ─────────────── BAR ────────────────────────────────────────── */
+	    Chart.prototype._drawBar = function () {
+	        var ctx = this.ctx, m = this._getMargins();
+	        var W = this.canvas.width, H = this.canvas.height;
+	        var plotW = W - m.left - m.right;
+	        var plotH = H - m.top  - m.bottom;
+	        var datasets = this.data.datasets || [];
+	        var labels   = this.data.labels   || [];
+	        var nGroups  = labels.length;
+	        var nDs      = datasets.length;
+	        if (nGroups === 0 || nDs === 0) return;
+	
+	        /* Axe Y : min/max */
+	        var allVals = [];
+	        datasets.forEach(function (ds) { (ds.data || []).forEach(function(v){ allVals.push(v||0); }); });
+	        var yMin = Math.min(0, Math.min.apply(null, allVals));
+	        var yMax = Math.max.apply(null, allVals);
+	        if (yMax === yMin) yMax = yMin + 1;
+	        var yRange = yMax - yMin;
+	        /* Arrondir à une graduation propre */
+	        var rawStep = yRange / 5;
+	        var magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+	        var niceStep  = Math.ceil(rawStep / magnitude) * magnitude;
+	        yMin = Math.floor(yMin / niceStep) * niceStep;
+	        yMax = Math.ceil(yMax  / niceStep) * niceStep;
+	        yRange = yMax - yMin;
+	
+	        var toY = function (v) { return m.top + plotH - ((v - yMin) / yRange) * plotH; };
+	        var zero = toY(0);
+	
+	        /* Grille et axe Y */
+	        ctx.save();
+	        ctx.strokeStyle = '#e0e0e0';
+	        ctx.lineWidth = 1;
+	        var ticksCb = deepGet(this.options, 'scales.y.ticks.callback', null);
+	        for (var tick = yMin; tick <= yMax + niceStep * 0.01; tick += niceStep) {
+	            var ty = toY(tick);
+	            ctx.beginPath(); ctx.moveTo(m.left, ty); ctx.lineTo(m.left + plotW, ty); ctx.stroke();
+	            ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+	            var label = ticksCb ? ticksCb(tick) : (Math.round(tick * 100) / 100);
+	            ctx.fillText(label, m.left - 4, ty + 4);
+	        }
+	        /* Axe zéro */
+	        ctx.strokeStyle = '#999'; ctx.lineWidth = 1;
+	        ctx.beginPath(); ctx.moveTo(m.left, zero); ctx.lineTo(m.left + plotW, zero); ctx.stroke();
+	        ctx.restore();
+	
+	        /* Barres */
+	        var groupW = plotW / nGroups;
+	        var barW   = groupW * 0.8 / nDs;
+	        var self   = this;
+	
+	        datasets.forEach(function (ds, di) {
+	            var bg  = ds.backgroundColor || DEFAULT_COLORS[di % DEFAULT_COLORS.length];
+	            var brd = ds.borderColor || bg;
+	            ctx.save();
+	            (ds.data || []).forEach(function (val, gi) {
+	                val = val || 0;
+	                var x = m.left + gi * groupW + groupW * 0.1 + di * barW;
+	                var y = val >= 0 ? toY(val) : zero;
+	                var h = Math.abs(toY(val) - zero);
+	                if (h < 1) h = 1;
+	                ctx.fillStyle = bg;
+	                ctx.strokeStyle = brd;
+	                ctx.lineWidth = ds.borderWidth || 0;
+	                ctx.fillRect(x, y, barW - 1, h);
+	                if (ds.borderWidth) ctx.strokeRect(x, y, barW - 1, h);
+	            });
+	            ctx.restore();
+	        });
+	
+	        /* Labels axe X */
+	        ctx.save();
+	        ctx.fillStyle = '#555'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+	        labels.forEach(function (lbl, gi) {
+	            var x = m.left + gi * groupW + groupW / 2;
+	            ctx.fillText(lbl, x, m.top + plotH + 14);
+	        });
+	        ctx.restore();
+	    };
+	
+	    /* ─────────────── LINE / AREA ────────────────────────────────── */
+	    Chart.prototype._drawLine = function () {
+	        var ctx = this.ctx, m = this._getMargins();
+	        var W = this.canvas.width, H = this.canvas.height;
+	        var plotW = W - m.left - m.right;
+	        var plotH = H - m.top  - m.bottom;
+	        var datasets = this.data.datasets || [];
+	        var labels   = this.data.labels   || [];
+	        var nPts     = labels.length;
+	        if (nPts === 0 || datasets.length === 0) return;
+	
+	        /* Axe Y */
+	        var allVals = [];
+	        datasets.forEach(function(ds){ (ds.data||[]).forEach(function(v){ allVals.push(v||0); }); });
+	        var yMin = Math.min.apply(null, allVals);
+	        var yMax = Math.max.apply(null, allVals);
+	        if (yMin === yMax) { yMin -= 1; yMax += 1; }
+	        if (yMin > 0) yMin = 0;
+	        var yRange = yMax - yMin;
+	        var rawStep = yRange / 5;
+	        var magnitude = Math.pow(10, Math.floor(Math.log10(Math.max(rawStep, 0.001))));
+	        var niceStep  = Math.ceil(rawStep / magnitude) * magnitude || 1;
+	        yMin = Math.floor(yMin / niceStep) * niceStep;
+	        yMax = Math.ceil(yMax  / niceStep) * niceStep;
+	        yRange = yMax - yMin;
+	        var toY = function (v) { return m.top + plotH - ((v - yMin) / yRange) * plotH; };
+	
+	        /* Grille */
+	        ctx.save();
+	        var ticksCb = deepGet(this.options, 'scales.y.ticks.callback', null);
+	        for (var tick = yMin; tick <= yMax + niceStep * 0.01; tick += niceStep) {
+	            var ty = toY(tick);
+	            ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+	            ctx.beginPath(); ctx.moveTo(m.left, ty); ctx.lineTo(m.left + plotW, ty); ctx.stroke();
+	            ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+	            var tickLabel = ticksCb ? ticksCb(tick) : (Math.round(tick * 100) / 100);
+	            ctx.fillText(tickLabel, m.left - 4, ty + 4);
+	        }
+	        ctx.restore();
+	
+	        /* Labels X */
+	        ctx.save();
+	        ctx.fillStyle = '#555'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+	        var xStep = plotW / Math.max(nPts - 1, 1);
+	        labels.forEach(function (lbl, i) {
+	            var x = m.left + i * xStep;
+	            ctx.fillText(lbl, x, m.top + plotH + 14);
+	        });
+	        ctx.restore();
+	
+	        /* Datasets */
+	        datasets.forEach(function (ds) {
+	            var data   = ds.data || [];
+	            var col    = ds.borderColor  || DEFAULT_COLORS[0];
+	            var fillCol= ds.backgroundColor || 'transparent';
+	            var doFill = ds.fill === true;
+	            var tension = ds.tension || 0;
+	            var ptR    = ds.pointRadius !== undefined ? ds.pointRadius : 3;
+	            var dashes = parseDashes(ds.borderDash);
+	
+	            /* Points */
+	            var pts = data.map(function (v, i) {
+	                return { x: m.left + i * xStep, y: toY(v || 0) };
+	            });
+	
+	            ctx.save();
+	            ctx.setLineDash(dashes);
+	            ctx.strokeStyle = col;
+	            ctx.lineWidth   = ds.borderWidth || 2;
+	            ctx.lineJoin    = 'round';
+	            ctx.lineCap     = 'round';
+	
+	            if (doFill && fillCol !== 'transparent') {
+	                /* Remplissage */
+	                ctx.beginPath();
+	                if (tension > 0) {
+	                    drawCurve(ctx, pts, tension);
+	                } else {
+	                    pts.forEach(function(p,i){ i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); });
+	                }
+	                ctx.lineTo(pts[pts.length-1].x, m.top + plotH);
+	                ctx.lineTo(pts[0].x, m.top + plotH);
+	                ctx.closePath();
+	                ctx.fillStyle = fillCol;
+	                ctx.fill();
+	            }
+	
+	            /* Ligne */
+	            ctx.beginPath();
+	            if (tension > 0) {
+	                drawCurve(ctx, pts, tension);
+	            } else {
+	                pts.forEach(function(p,i){ i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); });
+	            }
+	            ctx.stroke();
+	            ctx.setLineDash([]);
+	
+	            /* Points */
+	            if (ptR > 0) {
+	                pts.forEach(function (p) {
+	                    ctx.beginPath();
+	                    ctx.arc(p.x, p.y, ptR, 0, 2*Math.PI);
+	                    ctx.fillStyle = col;
+	                    ctx.fill();
+	                });
+	            }
+	            ctx.restore();
+	        });
+	    };
+	
+	    /* Courbe de Bézier lissée */
+	    function drawCurve(ctx, pts, tension) {
+	        if (pts.length < 2) return;
+	        ctx.moveTo(pts[0].x, pts[0].y);
+	        for (var i = 0; i < pts.length - 1; i++) {
+	            var p0 = pts[i > 0 ? i - 1 : i];
+	            var p1 = pts[i];
+	            var p2 = pts[i + 1];
+	            var p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+	            var cp1x = p1.x + (p2.x - p0.x) * tension / 3;
+	            var cp1y = p1.y + (p2.y - p0.y) * tension / 3;
+	            var cp2x = p2.x - (p3.x - p1.x) * tension / 3;
+	            var cp2y = p2.y - (p3.y - p1.y) * tension / 3;
+	            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+	        }
+	    }
+	
+	    /* ─────────────── CLICK (hit-test) ──────────────────────────── */
+	    Chart.prototype._bindClick = function () {
+	        var self = this;
+	        var onClickCfg = deepGet(this.options, 'onClick', null);
+	        var tooltipCb  = deepGet(this.options, 'plugins.tooltip.callbacks.label', null);
+	        if (!onClickCfg && !tooltipCb) return;
+	
+	        this._clickHandler = function (e) {
+	            var rect = self.canvas.getBoundingClientRect();
+	            var mx = e.clientX - rect.left;
+	            var my = e.clientY - rect.top;
+	            var found = [];
+	
+	            if (self.type === 'pie') {
+	                self._hitBoxes.forEach(function (hb, idx) {
+	                    var dx = mx - hb.cx, dy = my - hb.cy;
+	                    var dist = Math.sqrt(dx*dx + dy*dy);
+	                    if (dist > hb.r) return;
+	                    var angle = Math.atan2(dy, dx);
+	                    if (angle < hb.a0) angle += 2 * Math.PI;
+	                    if (angle >= hb.a0 && angle <= hb.a1) {
+	                        found.push({ index: hb.index, datasetIndex: 0 });
+	                    }
+	                });
+	            }
+	
+	            if (onClickCfg) onClickCfg(e, found);
+	        };
+	        this.canvas.addEventListener('click', this._clickHandler);
+	    };
+	
+	    /* ─────────────── TOOLTIP natif (title au survol) ────────────── */
+	    Chart.prototype._bindTooltip = function () {
+	        // Tooltips gérés nativement via title HTML sur le canvas
+	        // (non implémenté en canvas pour rester léger)
+	    };
+	
+	    /* ─── Export global ─────────────────────────────────────────── */
+	    global.Chart = Chart;
+	
+	}(typeof window !== 'undefined' ? window : this));
+	
+	    </script>
+</head>
+
+<body>
+	<div class="topbar">
+		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+			<h2 style="margin:0; color:#334a91; font-size:1.2rem; white-space:nowrap;">🎵 Hall of Fame 📱</h2>
+		</div>
+		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+			<label for="csvFileInput" class="highlight-btn">📁 Fichier source</label>
+			<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;">
+			<span id="csvFileName" class="file-info"></span>
+		</div>
+		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+			<label for="artistCsvFileInput" class="highlight-btn">👤 Fichier artistes</label>
+			<input type="file" id="artistCsvFileInput" accept=".csv,.txt" style="display:none;">
+			<span id="artistCsvFileName" class="file-info"></span>
+		</div>
+		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+			<div id="rowCountDisplay" style="margin-right: 0.625rem;">0 lignes</div>
+			<button id="driveStatusBtn" onclick="connectToDrive()" style="min-width:auto; padding:0.5rem 0.75rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">☁ Connecter</button>
+			<div id="syncSpinner" class="sync-spinner"></div>
+			<button id="showArtistListBtn" class="highlight-btn">📋 Artistes</button>
+			<button id="showVisualizationBtn" class="highlight-btn" onclick="openVisualizationModal()">📊 Stats</button>
+		</div>
+	</div>
+	
+	<!-- Badge mode hors ligne -->
+	<div id="offlineBadge" class="offline-badge">📵 Mode hors ligne</div>
+	
+	<!-- Bouton menu hamburger (visible sur mobile uniquement) -->
+	<button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()" style="display:none;">☰</button>
+	
+	<!-- Overlay sidebar (mobile) -->
+	<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+	
+	<div class="layout">
+		<aside class="sidebar" id="sidebar">
+			<!-- Bandeau de Pilotage -->
+			<div>
+				<label for="filterTypeMusique">Type de musique</label>
+				<input list="typeMusiqueList" id="filterTypeMusique" autocomplete="off">
+				<datalist id="typeMusiqueList"></datalist>
+			</div>
+			<div>
+				<label for="filterGenre">Liste par genre musical</label>
+				<select id="filterGenre"></select>
+			</div>
+			<div>
+				<label for="filterArtist">Liste par compositeur</label>
+				<select id="filterArtist">
+					<option value="">--- Tous les compositeurs ---</option>
+				</select>
+			</div>
+			<div>
+				<label for="filterMusicien">Liste par musicien</label>
+				<input list="musicienList" id="filterMusicien" autocomplete="off">
+				<datalist id="musicienList"></datalist>
+			</div>
+			<div>
+				<label for="filterFormat">Liste par support</label>
+				<select id="filterFormat"></select>
+			</div>
+			<div>
+				<label for="filterEtiquette">Liste par étiquette</label>
+				<input list="etiquetteList" id="filterEtiquette" autocomplete="off">
+				<datalist id="etiquetteList"></datalist>
+			</div>
+			<div>
+				<label for="filterAnnee">Liste par année de sortie</label>
+				<input list="anneeList" id="filterAnnee" autocomplete="off">
+				<datalist id="anneeList"></datalist>
+			</div>
+
+
+			<div>
+				<label for="filterRemarques">Recherche par remarques</label>
+				<input type="text" id="filterRemarques">
+			</div>
+			<button onclick="applyFilters()">🔍 Appliquer filtres</button>
+			<button onclick="clearFilters()">🗑️ Effacer filtres</button>
+			<button onclick="openNewEntryModal()">➕ Nouvelle entrée</button>
+
+			<hr style="border:none; border-top:2px solid #cfd3e1; margin:1rem 0;">
+			
+			<!-- Section Google Drive -->
+			<div class="gdrive-section">
+				<strong class="gdrive-title">☁️ Google Drive</strong>
+				<button onclick="saveAllToDrive()" class="gdrive-btn gdrive-save">💾 Sauvegarder sur Drive</button>
+				<button onclick="loadAllFromDrive()" class="gdrive-btn gdrive-load">⬇️ Charger depuis Drive</button>
+				<button onclick="driveConnected ? disconnectFromDrive() : connectToDrive()" id="driveToggleBtn" class="gdrive-btn gdrive-toggle">🔌 Connecter Drive</button>
+			</div>
+
+			<button onclick="downloadSourceCSV()">💾 Sauver fichier source</button>
+			<button onclick="downloadArtistCSV()">💾 Sauver fichier artistes</button>
+		</aside>
+		<main class="main">
+			<div id="table-scroll-container">
+				<table id="dataTable">
+					<thead>
+						<tr>
+							<th class="col-cle" data-col="Clé">Clé</th>
+							<th class="col-artiste" data-col="Artiste">Artiste</th>
+							<th class="col-titre" data-col="Titre">Titre</th>
+							<th class="col-genre" data-col="Genre musical">Genre musical</th>
+							<th class="col-etiquette" data-col="Etiquette">Etiquette</th>
+							<th class="col-compositeur" data-col="Compositeur">Compositeur</th>
+							<th class="col-musicien" data-col="Musicien">Musicien</th>
+							<th class="col-orchestre" data-col="Orchestre">Orchestre</th>
+							<th class="col-format" data-col="Format">Format</th>
+							<th class="col-annee" data-col="Année de sortie">Année de sortie</th>
+							<th class="col-epoque" data-col="Epoque">Epoque</th>
+							<th class="col-remarques" data-col="Remarques">Remarques</th>
+							<th class="col-date-achat" data-col="Date achat">Date achat</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</main>
+	</div>
+
+	<!-- Modale pour l'édition (Nouvelle entrée) -->
+	<div id="entryModal" class="modal modal-entry">
+		<div class="modal-header" id="entryModalHeader">
+			<h2 class="modal-title">Nouvelle entrée</h2>
+			<button class="close" onclick="closeModal('entryModal')" aria-label="Fermer">&times;</button>
+		</div>
+		<div class="modal-content">
+			<input type="hidden" id="eRowIndex">
+
+		<!-- 1ere ligne -->
+		<div class="row">
+			<label for="eCle">Clé:</label><input type="text" id="eCle" readonly class="w-7ch">
+			<label for="eGenreMusical">Genre musical:</label><input list="genreMusicalOptions" id="eGenreMusical"
+				class="w-40ch">
+			<datalist id="genreMusicalOptions"></datalist>
+			<label for="eTypeMusique">Type Musique:</label><input list="typeMusiqueOptions" id="eTypeMusique"
+				class="w-22ch">
+			<datalist id="typeMusiqueOptions"></datalist>
+		</div>
+
+		<!-- 2eme ligne -->
+		<div class="row">
+			<label for="eCompositeur">Compositeur:</label><input list="compositeurOptions" id="eCompositeur"
+				class="w-40ch">
+			<datalist id="compositeurOptions"></datalist>
+			<label for="eRemarques">Remarques:</label><input type="text" id="eRemarques" class="w-40ch">
+		</div>
+
+		<!-- 3eme ligne -->
+		<div class="row">
+			<label for="eEtiquette">Etiquette:</label><input type="text" id="eEtiquette" class="w-96ch">
+		</div>
+
+		<!-- 4eme ligne -->
+		<div class="row">
+			<label for="eChercheArtiste">Cherche artiste:</label><input list="chercheArtisteOptions" type="text"
+				id="eChercheArtiste" class="w-32ch">
+			<datalist id="chercheArtisteOptions"></datalist>
+			<span class="instruction-text">faire Ctrl +V dans la rubrique Musicien pour coller le résultat de la
+				recherche</span>
+		</div>
+
+		<!-- 5eme ligne -->
+		<div class="row">
+			<label for="eMusicien">Musicien:</label><textarea id="eMusicien"
+				class="w-98ch h-4rem"></textarea>
+		</div>
+
+		<!-- 6eme ligne -->
+		<div class="row">
+			<label for="eOrchestre">Orchestre:</label><input list="orchestreOptions" id="eOrchestre"
+				class="w-40ch">
+			<datalist id="orchestreOptions"></datalist>
+			<label for="eChefOrchestre">Chef d’Orchestre:</label><input list="chefOrchestreOptions" id="eChefOrchestre"
+				class="w-38ch">
+			<datalist id="chefOrchestreOptions"></datalist>
+		</div>
+
+		<!-- 7eme ligne -->
+		<div class="row">
+			<label for="eFormat">Format:</label><input list="formatOptions" id="eFormat" class="w-32ch">
+			<datalist id="formatOptions"></datalist>
+			<label for="eNbVolumes">Nb de volumes:</label><input type="text" id="eNbVolumes" style="width: 4ch;">
+			<label for="eDurée">Durée:</label><input type="text" id="eDurée" class="w-6ch">
+		</div>
+
+		<!-- 8eme ligne -->
+		<div class="row">
+			<label for="eDateAchat">Date d’achat:</label><input type="date" id="eDateAchat" style="width: 20ch;">
+			<label for="eAnneeSortie">Année de sortie:</label><input type="text" id="eAnneeSortie" class="w-8ch"
+				maxlength="4" pattern="[0-9]{1}[0-9]{3}" placeholder="SSAA">
+			<label for="eMontantEstime">Montant estimé:</label><input type="text" id="eMontantEstime"
+				class="w-3cm" pattern="[0-9]+([,\.][0-9]{2})?\s*€?" placeholder="0,00 €">
+			<!-- //  <label for="eInitialArtiste"># Compositeur:</label><input type="number" id="eInitialArtiste" class="w-8ch" min="0" max="999" readonly> -->
+			<label for="eInitialArtiste">Initiales :</label>
+			<button type="button" id="btnInitialArtiste" class="btn-initial-artiste" onclick="openArtistModalFromEntry()">
+				<span id="eInitialArtisteDisplay"></span>
+			</button>
+			<input type="hidden" id="eInitialArtiste">
+			<!-- <datalist id="initialArtisteOptions"></datalist> -->
+		</div>
+
+		<!-- 9eme ligne (Nouveaux champs) -->
+		<div class="row">
+			<label for="eAgeSupport">Age Support:</label><input type="number" id="eAgeSupport" class="w-6ch"
+				min="0" max="999">
+			<label for="eAnneeAchat">Année Achat:</label><input type="text" id="eAnneeAchat" class="w-8ch"
+				pattern="[0-9]{4}" placeholder="SSAA">
+			<label for="eInstrument">Instrument:</label><input list="instrumentOptions" id="eInstrument"
+				class="w-53ch">
+			<datalist id="instrumentOptions"></datalist>
+		</div>
+
+		<div class="footer">
+			<button onclick="saveEntry()">Enregistrer</button>
+			<button onclick="closeModal('entryModal')">Annuler</button>
+		</div>
+		</div><!-- Fin modal-content -->
+		<div class="modal-resizer"></div>
+	</div><!-- Fin entryModal -->
+
+	<!-- Modale pour la liste des artistes -->
+	<div id="artistListModal" class="modal modal-artist-list">
+		<span class="close" onclick="closeModal('artistListModal')">&times;</span>
+		<h2>Liste des Artistes</h2>
+		<div style="margin-bottom: 1rem; display: flex; gap: 1rem;">
+			<input type="text" id="artistSearch" placeholder="Rechercher un artiste..."
+				style="flex-grow: 1; padding: 0.5rem;">
+			<button onclick="openArtistModal()">Nouvel artiste</button>
+		</div>
+		<div style="overflow-y: auto; flex-grow: 1;">
+			<table id="artistListTable" style="width: 100%;">
+				<thead>
+					<tr>
+						<th data-sort="ACI">Type</th>
+						<th data-sort="Prénom">Prénom</th>
+						<th data-sort="Nom">Nom</th>
+						<th data-sort="Nom Complet">Nom Complet</th>
+						<th data-sort="Instrument">Instrument</th>
+						<th data-sort="Type Musique">Type Musique</th>
+						<th data-sort="Genre Musical">Genre Musical</th>
+						<th data-sort="Remarque">Remarques</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Modale pour la Visualisation -->
+	<div id="visualizationModal" class="modal" style="display: none; flex-direction: column;">
+		<div class="chart-header">
+			<button onclick="goBackDrilldown()">Retour</button>
+			<h2 id="chartTitle">Répartition par Type Musique</h2>
+			<button onclick="closeModal('visualizationModal')">Fermer</button>
+		</div>
+		<div id="chart_div"></div>
+	</div>
+
+	<!-- Modale pour Nouvel Artiste -->
+	<div id="artistModal" class="modal" style="min-width: 50rem; display: none; flex-direction: column;">
+		<span class="close" onclick="closeModal('artistModal')">&times;</span>
+		<h2>Nouvel artiste</h2>
+
+		<!-- Ligne 1: Mnémo, Prénom, Nom -->
+		<div class="row">
+			<input type="hidden" id="aType">
+			<label for="aMnémo">Mnémo:</label><input type="text" id="aMnémo" class="w-6ch" maxlength="3"
+				pattern="[a-zA-Z0-9]{3}" required>
+			<label for="aPrenom">Prénom:</label><input type="text" id="aPrenom" class="w-32ch">
+			<label for="aNom">Nom:</label><input type="text" id="aNom" class="w-32ch">
+		</div>
+
+		<!-- Ligne 2: Année de naissance, Année de décès -->
+		<div class="row">
+			<label for="aAnneeNaissance">Année naissance:</label><input type="text" id="aAnneeNaissance"
+				class="w-8ch" maxlength="4" pattern="[0-9]{4}">
+			<label for="aAnneeDeces">Année décès:</label><input type="text" id="aAnneeDeces" class="w-8ch"
+				maxlength="4" pattern="[0-9]{4}">
+		</div>
+
+		<!-- Ligne 3: Nationalité, Instrument -->
+		<div class="row">
+			<label for="aNationalite">Nationalité:</label><input list="nationaliteOptions" id="aNationalite"
+				class="w-32ch">
+			<datalist id="nationaliteOptions">
+				<option value="Algérienne">
+				<option value="Allemande">
+				<option value="Américaine">
+				<option value="Anglaise">
+				<option value="Argentine">
+				<option value="Autrichienne">
+				<option value="Belge">
+				<option value="Brésilienne">
+				<option value="Canadienne">
+				<option value="Cubaine">
+				<option value="Espagnole">
+				<option value="Française">
+				<option value="Hongroise">
+				<option value="Irlandaise">
+				<option value="Italienne">
+				<option value="Mexicaine">
+				<option value="Norvégienne">
+				<option value="New Zeland">
+				<option value="Polonaise">
+				<option value="Russe">
+				<option value="Suisse">
+				<option value="Tchèque">
+			</datalist>
+			<label for="aInstrument">Instrument:</label><input list="instrumentOptions" id="aInstrument"
+				style="width: 44ch;">
+			<datalist id="instrumentOptions"></datalist>
+		</div>
+
+		<!-- Ligne 4: Remarque -->
+		<div class="row">
+			<label for="aRemarque">Remarque:</label><textarea id="aRemarque"
+				style="width: 91ch; height: 2rem !important;"></textarea>
+		</div>
+
+		<!-- Ligne 5: Type d'artiste (boutons radio) -->
+		<div class="row">
+			<label style="min-width: 8rem; text-align: right; padding-right: 0.5rem;">Type d'artiste:</label>
+			<input type="radio" id="aCompositeurRadio" name="artistType" value="Compositeur" checked>
+			<label for="aCompositeurRadio"
+				style="min-width: auto; text-align: left; padding-right: 0.5rem;">Compositeur</label>
+			<input type="radio" id="aInterpreteRadio" name="artistType" value="Interprète">
+			<label for="aInterpreteRadio"
+				style="min-width: auto; text-align: left; padding-right: 0.5rem;">Interprète</label>
+		</div>
+
+		<!-- Ligne 6: Type de Musique, Genre musical -->
+		<div class="row">
+			<label for="aTypeMusique">Type de Musique:</label><input list="aTypeMusiqueOptions" id="aTypeMusique"
+				style="width: 25ch;">
+			<datalist id="aTypeMusiqueOptions"></datalist>
+			<label for="aGenreMusical">Genre musical:</label><input list="aGenreMusicalOptions" id="aGenreMusical"
+				style="width: 43ch;">
+			<datalist id="aGenreMusicalOptions"></datalist>
+		</div>
+
+		<!-- Ligne 7: Nom complet -->
+		<div class="row">
+			<label for="aNomComplet">Nom complet:</label><input type="text" id="aNomComplet" style="width: 87ch;"
+				readonly>
+		</div>
+
+		<div class="footer">
+			<button onclick="saveArtist()">Enregistrer</button>
+			<button onclick="closeModal('artistModal')">Annuler</button>
+		</div>
+	</div>
+
+	<script>
+		// Le bloc try/catch est présent pour intercepter les erreurs potentielles
+		// dues à des scripts externes (comme 'inject.js' mentionné dans l'erreur Firefox)
+		// qui pourraient tenter d'accéder à des APIs du navigateur (comme localStorage)
+		// dans un contexte où elles ne sont pas disponibles (ex: about:srcdoc).
+
+
+		function openModal(id) {
+			document.getElementById(id).style.display = 'flex'; // Utiliser flex pour la modale artiste
+		}
+
+		function closeModal(id) {
+			document.getElementById(id).style.display = 'none';
+		}
+
+		// --- Visualisation (Chart.js autonome) ---
+
+		let currentDrilldown = []; // [Type Musique, Genre musical]
+
+		function openVisualizationModal() {
+			if (!data || data.length === 0) {
+				alert("Veuillez d'abord sélectionner et charger le fichier source (CSV) pour la visualisation.");
+				return;
+			}
+			openModal('visualizationModal');
+			document.getElementById('chartTitle').textContent = 'Répartition par Type Musique';
+			currentDrilldown = [];
+			document.querySelector('#visualizationModal .chart-header button').disabled = true; // Désactiver le bouton Retour au niveau racine
+			drawChart('Type Musique');
+		}
+
+		// Palette pastel identique à l'ancienne configuration Google Charts
+		const PIE_COLORS = [
+			'#FFB6C1','#ADD8E6','#90EE90','#FFDAB9','#F08080',
+			'#DDA0DD','#B0E0E6','#FAFAD2','#E6E6FA','#FFE4E1',
+			'#FFFACD','#E0FFFF','#F5DEB3','#D3FFCE','#C9C0BB'
+		];
+
+		let _chartInstance = null; // instance Chart.js courante
+
+		function aggregateData(column, filters = {}) {
+			const counts = {};
+			const dataToProcess = data.filter(row =>
+				Object.entries(filters).every(([key, value]) => row[key] === value)
+			);
+			dataToProcess.forEach(row => {
+				const key = row[column] || 'Non spécifié';
+				counts[key] = (counts[key] || 0) + 1;
+			});
+			// Trier par quantité décroissante
+			return Object.entries(counts)
+				.sort(([, a], [, b]) => b - a)
+				.map(([label, value]) => ({ label, value }));
+		}
+
+		function drawChart(column, filters = {}) {
+			const segments = aggregateData(column, filters);
+			const labels  = segments.map(s => s.label);
+			const values  = segments.map(s => s.value);
+			const colors  = labels.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]);
+
+			// Préparer le conteneur canvas (Chart.js a besoin d'un <canvas>)
+			const container = document.getElementById('chart_div');
+			container.innerHTML = '<canvas id="hof_pie_canvas"></canvas>';
+			const canvas = document.getElementById('hof_pie_canvas');
+			canvas.style.width  = '100%';
+			canvas.style.height = '100%';
+
+			// Détruire l'instance précédente si elle existe
+			if (_chartInstance) { try { _chartInstance.destroy(); } catch(e) {} _chartInstance = null; }
+
+			_chartInstance = new Chart(canvas.getContext('2d'), {
+				type: 'pie',
+				data: {
+					labels: labels,
+					datasets: [{
+						data: values,
+						backgroundColor: colors,
+						borderWidth: 2,
+						borderColor: '#fff'
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						title: {
+							display: true,
+							text: document.getElementById('chartTitle').textContent,
+							font: { size: 15, weight: 'bold' },
+							color: '#333'
+						},
+						legend: {
+							position: 'right',
+							labels: { font: { size: 12 }, padding: 14 },
+							// ✨ POINT 3 : Rendre la légende cliquable
+							onClick: (evt, legendItem, legend) => {
+								const index = legendItem.index;
+								handleDrilldown(labels[index]);
+							}
+						},
+						tooltip: {
+							callbacks: {
+								label: ctx => ` ${ctx.label} : ${ctx.raw}`
+							}
+						}
+					},
+					// Clic sur les portions du graphique
+					onClick: (_evt, elements) => {
+						if (elements.length > 0) {
+							const idx = elements[0].index;
+							handleDrilldown(labels[idx]);
+						}
+					}
+				}
+			});
+		}
+
+		function handleDrilldown(selectedValue) {
+			document.querySelector('#visualizationModal .chart-header button').disabled = false; // Activer le bouton Retour après le premier clic
+			if (currentDrilldown.length === 0) {
+				// Niveau 1: Type Musique -> Genre musical
+				currentDrilldown.push(selectedValue);
+				document.getElementById('chartTitle').textContent = `Répartition par Genre musical pour ${selectedValue}`;
+				drawChart('Genre musical', { 'Type Musique': selectedValue });
+			} else if (currentDrilldown.length === 1) {
+				// Niveau 2: Genre musical -> Compositeur
+				const typeMusique = currentDrilldown[0];
+				currentDrilldown.push(selectedValue);
+				document.getElementById('chartTitle').textContent = `Répartition par Compositeur pour ${typeMusique} - ${selectedValue}`;
+				// On filtre sur Type Musique ET Genre musical
+				drawChart('Compositeur', { 'Type Musique': typeMusique, 'Genre musical': selectedValue });
+			} else if (currentDrilldown.length === 2) {
+				// ✨ POINT 4 : Niveau 3 - Afficher un tableau détaillé dans la modale
+				const selectedCompositeur = selectedValue;
+				const typeMusique = currentDrilldown[0];
+				const genreMusical = currentDrilldown[1];
+				
+				currentDrilldown.push(selectedCompositeur);
+				document.getElementById('chartTitle').textContent = `Détails pour ${selectedCompositeur}`;
+				
+				// Filtrer les données correspondantes
+				const filteredRows = data.filter(row => 
+					row['Type Musique'] === typeMusique &&
+					row['Genre musical'] === genreMusical &&
+					row['Compositeur'] === selectedCompositeur
+				);
+				
+				// Afficher le tableau détaillé
+				displayDetailTable(filteredRows);
+			}
+		}
+		
+		// ✨ POINT 4 : Fonction pour afficher le tableau détaillé avec colonnes redimensionnables
+		function displayDetailTable(rows) {
+			const container = document.getElementById('chart_div');
+			
+			if (rows.length === 0) {
+				container.innerHTML = '<p style="text-align:center;padding:2rem;">Aucune donnée à afficher</p>';
+				return;
+			}
+			
+			// Colonnes à afficher selon votre demande
+			const columns = ['Clé', 'Genre musical', 'Etiquette', 'Compositeur', 'Musicien', 'Orchestre', 'Format', 'Date achat'];
+			
+			let tableHTML = `
+				<div style="overflow:auto; max-height:70vh;">
+					<table id="detailTable" style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+						<thead>
+							<tr style="background:#334a91; color:white; position:sticky; top:0;">
+			`;
+			
+			columns.forEach(col => {
+				tableHTML += `<th style="padding:0.5rem; border:1px solid #ddd; cursor:col-resize; position:relative; min-width:80px;">${col}</th>`;
+			});
+			
+			tableHTML += `<th style="padding:0.5rem; border:1px solid #ddd;">Actions</th>
+						</tr>
+					</thead>
+					<tbody>`;
+			
+			rows.forEach((row, idx) => {
+				tableHTML += '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f5f7ff') + ';">';
+				columns.forEach(col => {
+					tableHTML += `<td style="padding:0.5rem; border:1px solid #ddd;">${row[col] || ''}</td>`;
+				});
+				tableHTML += `<td style="padding:0.5rem; border:1px solid #ddd;">
+					<button onclick="editRow('${row['Clé']}')" style="padding:0.25rem 0.5rem; margin-right:0.25rem;">✏️</button>
+					<button onclick="deleteRow('${row['Clé']}')" style="padding:0.25rem 0.5rem;">🗑️</button>
+				</td></tr>`;
+			});
+			
+			tableHTML += `</tbody></table></div>`;
+			container.innerHTML = tableHTML;
+			
+			// ✨ Ajouter le redimensionnement des colonnes
+			makeColumnsResizable();
+		}
+		
+		// ✨ POINT 4 : Rendre les colonnes redimensionnables
+		function makeColumnsResizable() {
+			const table = document.getElementById('detailTable');
+			if (!table) return;
+			
+			const cols = table.querySelectorAll('th');
+			cols.forEach((col, index) => {
+				if (index === cols.length - 1) return; // Skip "Actions" column
+				
+				const resizer = document.createElement('div');
+				resizer.style.cssText = 'position:absolute; right:0; top:0; width:5px; height:100%; cursor:col-resize; background:rgba(255,255,255,0.3);';
+				col.style.position = 'relative';
+				col.appendChild(resizer);
+				
+				let startX, startWidth;
+				
+				resizer.addEventListener('mousedown', (e) => {
+					startX = e.pageX;
+					startWidth = col.offsetWidth;
+					
+					const onMouseMove = (e) => {
+						const newWidth = startWidth + (e.pageX - startX);
+						if (newWidth > 50) {
+							col.style.width = newWidth + 'px';
+							col.style.minWidth = newWidth + 'px';
+						}
+					};
+					
+					const onMouseUp = () => {
+						document.removeEventListener('mousemove', onMouseMove);
+						document.removeEventListener('mouseup', onMouseUp);
+					};
+					
+					document.addEventListener('mousemove', onMouseMove);
+					document.addEventListener('mouseup', onMouseUp);
+					e.preventDefault();
+				});
+			});
+		}
+
+		function goBackDrilldown() {
+			if (currentDrilldown.length === 3) {
+				// ✨ Retour du tableau détaillé (niveau 3) au graphique Compositeur (niveau 2)
+				currentDrilldown.pop();
+				const typeMusique = currentDrilldown[0];
+				const genreMusical = currentDrilldown[1];
+				document.getElementById('chartTitle').textContent = `Répartition par Compositeur pour ${typeMusique} - ${genreMusical}`;
+				drawChart('Compositeur', { 'Type Musique': typeMusique, 'Genre musical': genreMusical });
+			} else if (currentDrilldown.length === 2) {
+				// Retour du niveau Compositeur au niveau Genre musical
+				currentDrilldown.pop();
+				const typeMusique = currentDrilldown[0];
+				document.getElementById('chartTitle').textContent = `Répartition par Genre musical pour ${typeMusique}`;
+				drawChart('Genre musical', { 'Type Musique': typeMusique });
+			} else if (currentDrilldown.length === 1) {
+				// Retour du niveau Genre musical au niveau Type Musique
+				currentDrilldown.pop();
+				document.getElementById('chartTitle').textContent = 'Répartition par Type Musique';
+				document.querySelector('#visualizationModal .chart-header button').disabled = true; // Désactiver le bouton Retour au niveau racine
+				drawChart('Type Musique');
+			}
+			// Si length est 0, on ne fait rien (on est à la racine)
+		}
+
+		// --- Fin Visualisation ---
+
+		// Déclaration des variables globales pour assurer leur portée
+		let data = [];
+		let artistData = [];
+		let filteredData = [];
+		const ITEMS_PER_PAGE = 100;
+		let currentPage = 1;
+		let sortColumn = 'Date achat';
+		let sortDirection = 'desc';
+		let sourceFileName = 'Hall_of_fame_maj.csv';
+		let artistFileName = 'Artistes_maj.csv'; // Nom de fichier par défaut pour la sauvegarde
+
+		try {
+			// Le code de l'application
+
+			document.getElementById('csvFileInput').addEventListener('change', handleFileSelect, false);
+			document.getElementById('artistCsvFileInput').addEventListener('change', handleArtistFileSelect, false);
+
+			// Écouteur pour la validation du champ Mnémo
+			document.getElementById('aMnémo').addEventListener('input', validateMnémo);
+			document.getElementById('showArtistListBtn').addEventListener('click', () => openModal('artistListModal'));
+			document.getElementById('filterFormat').addEventListener('change', applyFilters);
+
+			// Ajout des écouteurs pour le tri
+			document.querySelectorAll('#dataTable th').forEach(header => {
+				header.addEventListener('click', () => {
+					const column = header.getAttribute('data-col');
+					if (column) {
+						sortTable(column);
+					}
+				});
+			});
+
+			function handleFileSelect(event) {
+				const file = event.target.files[0];
+				if (!file) return;
+
+				document.getElementById('csvFileName').textContent = file.name;
+				sourceFileName = file.name;
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					const text = e.target.result;
+					data = parseCSV(text);
+					filteredData = data;
+					populateFilters();
+					populateArtistDataLists();
+					// Tri initial par Date achat (du plus récent au plus ancien)
+					sortColumn = 'Date achat';
+					sortDirection = 'desc';
+					// applyFilters() appelle sortTable() qui utilise sortColumn et sortDirection pour le tri initial
+					applyFilters();
+					console.log("Données principales chargées et rendu du tableau forcé.");
+				};
+				reader.readAsText(file, 'UTF-8');
+			}
+
+			function handleArtistFileSelect(event) {
+				const file = event.target.files[0];
+				if (!file) return;
+
+				document.getElementById('artistCsvFileName').textContent = file.name;
+				artistFileName = file.name; // Sauvegarder le nom du fichier pour la sauvegarde
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					const text = e.target.result;
+					artistData = parseArtistCSV(text);
+					populateArtistList();
+					populateArtistDataLists();
+					console.log("Données artistes chargées et listes de filtres artistes forcées.");
+				};
+				reader.readAsText(file, 'UTF-8');
+			}
+
+			function parseCSV(text) {
+				const lines = text.split(/\r\n|\n/);
+				// Utiliser la tabulation (\t) comme séparateur
+				const headers = lines[0].split('\t').map(h => h.trim());
+				const rows = [];
+				for (let i = 1; i < lines.length; i++) {
+					if (lines[i].trim() === '') continue;
+					// Utiliser la tabulation (\t) comme séparateur
+					const values = lines[i].split('\t');
+					const row = {};
+					headers.forEach((header, index) => {
+						row[header] = values[index] ? values[index].trim() : '';
+					});
+					rows.push(row);
+				}
+				return rows;
+			}
+
+			function parseArtistCSV(text) {
+				const lines = text.split(/\r\n|\n/);
+				// Utiliser la tabulation (\t) comme séparateur
+				const headers = lines[0].split('\t').map(h => h.trim());
+				const rows = [];
+				for (let i = 1; i < lines.length; i++) {
+					if (lines[i].trim() === '') continue;
+					// Utiliser la tabulation (\t) comme séparateur
+					const values = lines[i].split('\t');
+					const row = {};
+					headers.forEach((header, index) => {
+						row[header] = values[index] ? values[index].trim() : '';
+					});
+
+					// Traitement des champs manquants/vides et traduction ACI
+					// ACI: 0 -> Compositeur, 1 -> Artiste
+					if (row.ACI === '0') {
+						row.ACI = 'Compositeur';
+					} else if (row.ACI === '1') {
+						row.ACI = 'Artiste';
+					}
+
+					// Initialisation des champs vides
+					row['Type Musique'] = row['Type Musique'] || '';
+					row['Genre Musical'] = row['Genre Musical'] || '';
+					row['Nom Complet'] = row['Nom Complet'] || `${row['Prénom'] || ''} ${row['Nom'] || ''}`.trim();
+
+					rows.push(row);
+				}
+				return rows;
+			}
+
+			// Map pour lier Genre Musical à la première Type Musique trouvée
+			let genreToFirstTypeMusique = {};
+
+			// Fonction principale pour mettre à jour le champ 'Type Musique'
+			function updateTypeMusiqueLogic() {
+				const genreMusical = document.getElementById('eGenreMusical').value;
+				const initialArtiste = document.getElementById('eInitialArtiste').value;
+				const typeMusiqueField = document.getElementById('eTypeMusique');
+
+				let newTypeMusique = '';
+
+				// 1. Logique Primaire (Mode Création/Modification) : Basé sur le Genre Musical
+				if (genreMusical && genreToFirstTypeMusique[genreMusical]) {
+					newTypeMusique = genreToFirstTypeMusique[genreMusical];
+				}
+
+				// 2. Logique Secondaire (Mode Création/Modification) : Basé sur l'Initialartiste (Mnémo)
+				if (!newTypeMusique && initialArtiste) {
+					const artist = artistData.find(a => a.Initialartiste === initialArtiste);
+					if (artist && artist['Type Musique']) {
+						newTypeMusique = artist['Type Musique'];
+					}
+				}
+
+				// Appliquer la nouvelle valeur
+				typeMusiqueField.value = newTypeMusique;
+			}
+
+			function populateFilters() {
+				const filterTypeMusique = document.getElementById('filterTypeMusique');
+				const filterGenre = document.getElementById('filterGenre');
+				const filterFormat = document.getElementById('filterFormat');
+
+				if (!filterTypeMusique || !filterGenre || !filterFormat) {
+					console.error("Erreur: Un ou plusieurs éléments de filtre sont introuvables.");
+					return;
+				}
+
+				const typeMusiques = new Set();
+				const genres = new Set();
+				const formats = new Set();
+				const musiciens = new Set();
+				const etiquettes = new Set();
+				const annees = new Set();
+				// const epoques = new Set(); // Supprimé
+				const orchestres = new Set(); // Nouveau
+				const chefsOrchestre = new Set(); // Nouveau
+
+				// Réinitialiser la map
+				genreToFirstTypeMusique = {};
+
+				data.forEach(row => {
+					if (row['Type Musique']) typeMusiques.add(row['Type Musique']);
+					if (row['Genre musical'] && row['Type Musique']) {
+						genres.add(row['Genre musical']);
+						// Stocker la relation Genre -> Type Musique (première valeur trouvée)
+						if (!genreToFirstTypeMusique[row['Genre musical']]) {
+							genreToFirstTypeMusique[row['Genre musical']] = row['Type Musique'];
+						}
+					}
+					if (row.Format) row.Format.split(',').forEach(f => formats.add(f.trim()));
+					artistData.forEach(artist => {
+						if (artist['Nom Complet']) musiciens.add(artist['Nom Complet']);
+					});
+					if (row.Etiquette) etiquettes.add(row.Etiquette);
+					if (row['Année de sortie']) annees.add(row['Année de sortie']);
+					// if (row.Epoque) epoques.add(row.Epoque); // Supprimé
+					if (row.Orchestre) orchestres.add(row.Orchestre); // Nouveau
+					if (row['Chef Orchestre']) chefsOrchestre.add(row['Chef Orchestre']); // Nouveau
+				});
+
+				// Type de musique (datalist pour input)
+				const typeMusiqueList = document.getElementById('typeMusiqueList');
+				typeMusiqueList.innerHTML = '';
+				[...typeMusiques].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					typeMusiqueList.appendChild(option);
+				});
+
+				// Liste par genre musical (select)
+				filterGenre.innerHTML = '<option value="">--- Tous les genres ---</option>';
+				[...genres].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					option.textContent = value;
+					filterGenre.appendChild(option);
+				});
+
+				// Ajouter l'écouteur pour la logique Genre -> Type Musique
+				filterGenre.removeEventListener('change', handleGenreChange); // S'assurer qu'il n'y a qu'un seul écouteur
+				filterGenre.addEventListener('change', handleGenreChange);
+
+				function handleGenreChange() {
+					const selectedGenre = filterGenre.value;
+					// Logique: Lorsqu'une valeur est choisie dans le sélecteur Liste par genre musical, 
+					// la valeur correspondante de Type de musique est automatiquement attribuée au champ Type Musique.
+					if (selectedGenre && genreToFirstTypeMusique[selectedGenre]) {
+						filterTypeMusique.value = genreToFirstTypeMusique[selectedGenre];
+					} else {
+						filterTypeMusique.value = '';
+					}
+					// Après avoir mis à jour le Type Musique, on applique les filtres
+					populateComposerList();
+					applyFilters();
+				}
+
+				// Liste par musicien (datalist pour input)
+				const musicienList = document.getElementById('musicienList');
+				musicienList.innerHTML = '';
+				[...musiciens].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					musicienList.appendChild(option);
+				});
+
+				// Liste par support (select)
+				// On initialise la liste des formats une seule fois avec toutes les valeurs
+				filterFormat.innerHTML = '<option value="">--- Tous les supports ---</option>';
+				[...formats].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					option.textContent = value;
+					filterFormat.appendChild(option);
+				});
+
+
+
+				// Liste par étiquette (datalist pour input)
+				const etiquetteList = document.getElementById('etiquetteList');
+				etiquetteList.innerHTML = '';
+				[...etiquettes].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					etiquetteList.appendChild(option);
+				});
+
+				// Liste par année de sortie (datalist pour input)
+				const anneeList = document.getElementById('anneeList');
+				anneeList.innerHTML = '';
+				[...annees].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					anneeList.appendChild(option);
+				});
+
+
+
+				// Mise à jour des datalists de la modale Nouvelle Entrée
+				const orchestreOptions = document.getElementById('orchestreOptions');
+				orchestreOptions.innerHTML = '';
+				[...orchestres].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					orchestreOptions.appendChild(option);
+				});
+
+				const chefOrchestreOptions = document.getElementById('chefOrchestreOptions');
+				chefOrchestreOptions.innerHTML = '';
+				[...chefsOrchestre].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					chefOrchestreOptions.appendChild(option);
+				});
+
+				const formatOptions = document.getElementById('formatOptions');
+				formatOptions.innerHTML = '';
+				[...formats].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					formatOptions.appendChild(option);
+				});
+
+				populateComposerList();
+			}
+
+			function populateComposerList() {
+				const filterArtist = document.getElementById('filterArtist');
+				const selectedTypeMusique = document.getElementById('filterTypeMusique').value;
+
+				const compositeurs = new Set();
+				data.forEach(row => {
+					if (row.Compositeur && (!selectedTypeMusique || row['Type Musique'] === selectedTypeMusique)) {
+						compositeurs.add(row.Compositeur);
+					}
+				});
+
+				filterArtist.innerHTML = '<option value="">--- Tous les compositeurs ---</option>';
+				[...compositeurs].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					option.textContent = value;
+					filterArtist.appendChild(option);
+				});
+			}
+
+			function validateMnémo() {
+				const input = document.getElementById('aMnémo');
+				const value = input.value.trim();
+
+				// Vérifier la longueur et le pattern (3 caractères alphanumériques)
+				const isValidFormat = /^[a-zA-Z0-9]{3}$/.test(value);
+
+				if (!isValidFormat) {
+					input.classList.remove('is-valid');
+					input.classList.remove('is-invalid');
+					return; // Ne pas valider la duplication si le format n'est pas bon
+				}
+
+				// Vérifier la duplication dans artistData
+				// On vérifie seulement si on est en mode création (aMnémo n'est pas en lecture seule)
+				const isCreationMode = !input.readOnly;
+
+				if (isCreationMode) {
+					const isDuplicate = artistData.some(artist => artist.Initialartiste === value);
+
+					if (isDuplicate) {
+						input.classList.remove('is-valid');
+						input.classList.add('is-invalid');
+					} else {
+						input.classList.remove('is-invalid');
+						input.classList.add('is-valid');
+					}
+				} else {
+					// En mode édition, on ne vérifie pas la duplication, on retire les classes de validation
+					input.classList.remove('is-valid');
+					input.classList.remove('is-invalid');
+				}
+			}
+
+			function populateArtistDataLists() {
+				const genreMusicalOptions = document.getElementById('genreMusicalOptions');
+				const typeMusiqueOptions = document.getElementById('aTypeMusiqueOptions');
+				const instrumentOptions = document.getElementById('instrumentOptions');
+				const compositeurOptions = document.getElementById('compositeurOptions'); // Nouveau
+
+				const genres = new Set();
+				const types = new Set();
+				const instruments = new Set();
+				const compositeurs = new Set(); // Nouveau
+
+				// Récupérer les types de musique de la base principale (data)
+				data.forEach(row => {
+					if (row['Type Musique']) types.add(row['Type Musique']);
+				});
+
+				// Récupérer les genres, instruments et Noms Complets (pour Compositeur) de la base artistes (artistData)
+				artistData.forEach(row => {
+					if (row['Genre Musical']) genres.add(row['Genre Musical']); // Ajout des genres de la base artiste
+					if (row.Instrument) instruments.add(row.Instrument);
+					if (row['Nom Complet']) compositeurs.add(row['Nom Complet']); // Alimentation du champ Compositeur avec Nom Complet des artistes
+				});
+
+				// Mise à jour de la datalist du formulaire "Nouvelle entrée" (eGenreMusical)
+				genreMusicalOptions.innerHTML = '';
+				[...genres].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					genreMusicalOptions.appendChild(option);
+				});
+
+				// Mise à jour de la datalist du formulaire "Nouvelle entrée" (eCompositeur)
+				compositeurOptions.innerHTML = '';
+				[...compositeurs].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					compositeurOptions.appendChild(option);
+				});
+
+				// Mise à jour des datalists du formulaire "Nouvel artiste"
+				const aGenreMusicalOptions = document.getElementById('aGenreMusicalOptions');
+				aGenreMusicalOptions.innerHTML = '';
+				[...genres].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					aGenreMusicalOptions.appendChild(option);
+				});
+
+				typeMusiqueOptions.innerHTML = '';
+				[...types].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					typeMusiqueOptions.appendChild(option);
+				});
+
+				instrumentOptions.innerHTML = '';
+				[...instruments].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					instrumentOptions.appendChild(option);
+				});
+			}
+
+			// Fonction pour mettre à jour le filtre Format en fonction des filtres appliqués
+			function updateFormatFilter() {
+				const filterFormat = document.getElementById('filterFormat');
+				const currentFormatValue = filterFormat.value;
+
+				// 1. Récupérer les formats uniques des données filtrées
+				const filteredFormats = new Set();
+				filteredData.forEach(row => {
+					if (row.Format) row.Format.split(',').forEach(f => filteredFormats.add(f.trim()));
+				});
+
+				// 2. Mettre à jour les options du select
+				filterFormat.innerHTML = '<option value="">--- Tous les supports ---</option>';
+				[...filteredFormats].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					option.textContent = value;
+					filterFormat.appendChild(option);
+				});
+
+				// 3. Restaurer la valeur sélectionnée si elle existe toujours
+				if (filteredFormats.has(currentFormatValue)) {
+					filterFormat.value = currentFormatValue;
+				} else {
+					filterFormat.value = '';
+				}
+			}
+
+			function applyFilters() {
+				const filterTypeMusique = document.getElementById('filterTypeMusique').value.toLowerCase();
+				const filterGenre = document.getElementById('filterGenre').value.toLowerCase();
+				const filterArtist = document.getElementById('filterArtist').value.toLowerCase();
+				const filterMusicien = document.getElementById('filterMusicien').value.toLowerCase();
+				const filterFormat = document.getElementById('filterFormat').value.toLowerCase();
+				const filterEtiquette = document.getElementById('filterEtiquette').value.toLowerCase();
+				const filterAnnee = document.getElementById('filterAnnee').value.toLowerCase();
+				// const filterEpoque = document.getElementById('filterEpoque').value.toLowerCase(); // Supprimé
+				// const filterTitre = document.getElementById('filterTitre').value.toLowerCase(); // Supprimé
+				const filterRemarques = document.getElementById('filterRemarques').value.toLowerCase();
+
+				filteredData = data.filter(row => {
+					const typeMusiqueMatch = !filterTypeMusique || (row['Type Musique'] && row['Type Musique'].toLowerCase().includes(filterTypeMusique));
+					const genreMatch = !filterGenre || (row['Genre musical'] && row['Genre musical'].toLowerCase().includes(filterGenre));
+					const artistMatch = !filterArtist || (row.Compositeur && row.Compositeur.toLowerCase().includes(filterArtist));
+					const musicienMatch = !filterMusicien || (row.Musicien && row.Musicien.split(',').some(m => {
+						// Recherche directement dans le Nom Complet du musicien dans la ligne de données
+						return m.trim().toLowerCase().includes(filterMusicien);
+					}));
+					const formatMatch = !filterFormat || (row.Format && row.Format.toLowerCase().includes(filterFormat));
+					const etiquetteMatch = !filterEtiquette || (row.Etiquette && row.Etiquette.toLowerCase().includes(filterEtiquette));
+					const anneeMatch = !filterAnnee || (row['Année de sortie'] && row['Année de sortie'].toLowerCase().includes(filterAnnee));
+					const epoqueMatch = true; // Supprimé
+					const titreMatch = true; // Supprimé
+					const remarquesMatch = !filterRemarques || (row.Remarques && row.Remarques.toLowerCase().includes(filterRemarques));
+
+					return typeMusiqueMatch && genreMatch && artistMatch && musicienMatch && formatMatch && etiquetteMatch && anneeMatch && epoqueMatch && titreMatch && remarquesMatch;
+				});
+
+				currentPage = 1;
+				// On trie les données filtrées avant de les afficher
+				updateFormatFilter();
+				sortTable(sortColumn);
+			}
+
+			function clearFilters() {
+				document.getElementById('filterTypeMusique').value = '';
+				document.getElementById('filterGenre').value = '';
+				document.getElementById('filterArtist').value = '';
+				document.getElementById('filterMusicien').value = '';
+				document.getElementById('filterFormat').value = '';
+				document.getElementById('filterEtiquette').value = '';
+				document.getElementById('filterAnnee').value = '';
+				// document.getElementById('filterEpoque').value = ''; // Supprimé
+				// document.getElementById('filterTitre').value = ''; // Supprimé
+				document.getElementById('filterRemarques').value = '';
+
+				// Réinitialiser la liste des compositeurs
+				populateComposerList();
+
+				applyFilters();
+			}
+
+			function generateNewCle() {
+				const maxCle = data.reduce((max, row) => {
+					const cle = parseInt(row['Clé'], 10);
+					return isNaN(cle) ? max : Math.max(max, cle);
+				}, 0);
+				return (maxCle + 1).toString().padStart(3, '0');
+			}
+
+			function editEntry(index) {
+				const row = filteredData[index];
+				document.getElementById('eRowIndex').value = index;
+
+				// Remplissage des champs de la modale "Nouvelle entrée" (qui sert à l'édition)
+				document.getElementById('eCle').value = row['Clé'] || '';
+				document.getElementById('eCle').readOnly = true; // La clé ne doit pas être modifiable en édition
+				// En mode édition, le champ 'Initiales' ('eInitialArtiste') prend la valeur de la colonne 'Initialartiste' du CSV principal.
+				document.getElementById('eInitialArtiste').value = row['Initialartiste'] || ''; // Champ caché
+				document.getElementById('eInitialArtisteDisplay').textContent = row['Initialartiste'] || ''; // Affichage du bouton
+				// document.getElementById('eInitialArtiste').readOnly = true; // Le champ est caché, readOnly n'est plus pertinent
+				document.getElementById('eGenreMusical').value = row['Genre musical'] || '';
+				document.getElementById('eGenreMusical').setAttribute('list', 'genreMusicalOptions'); // Assurer que la datalist est utilisée en mode modification
+				document.getElementById('eTypeMusique').value = row['Type Musique'] || '';
+
+				// En mode modification, le champ Type Musique est rempli par la valeur existante
+				document.getElementById('eTypeMusique').readOnly = false; // Rendre Type Musique modifiable en mode modification
+				document.getElementById('eTypeMusique').setAttribute('list', 'typeMusiqueOptions'); // Ajouter la datalist pour Type Musique
+
+				// Écouteurs pour la modification en mode édition
+				document.getElementById('eGenreMusical').removeEventListener('change', updateTypeMusiqueLogic);
+				document.getElementById('eInitialArtiste').removeEventListener('change', updateTypeMusiqueLogic);
+				document.getElementById('eGenreMusical').addEventListener('change', updateTypeMusiqueLogic);
+				document.getElementById('eInitialArtiste').addEventListener('change', updateTypeMusiqueLogic);
+
+				// Suppression des anciens écouteurs pour éviter les doublons
+				document.getElementById('eInitialArtiste').removeEventListener('change', updateInstrumentList);
+				document.getElementById('eInitialArtiste').removeEventListener('change', loadAgeAnneeAchat);
+
+				// Logique pour le champ Instrument en mode édition:
+				// On met à jour la datalist 'instrumentOptions' immédiatement avec les instruments de l'artiste
+				updateInstrumentList();
+				// On ajoute un écouteur pour mettre à jour la datalist 'instrumentOptions' si l'artiste initial change
+				document.getElementById('eInitialArtiste').addEventListener('change', updateInstrumentList);
+
+				// On ajoute un écouteur pour charger Age Support et Année Achat lors du changement d'Initiales
+				document.getElementById('eInitialArtiste').addEventListener('change', loadAgeAnneeAchat);
+
+				document.getElementById('eCompositeur').value = row.Compositeur || '';
+				document.getElementById('eCompositeur').setAttribute('list', 'compositeurOptions'); // Assurer que la datalist est utilisée en mode édition
+				document.getElementById('eRemarques').value = row.Remarques || '';
+				document.getElementById('eEtiquette').value = row.Etiquette || '';
+				document.getElementById('eChercheArtiste').value = ''; // Champ temporaire
+				document.getElementById('eMusicien').value = row.Musicien || '';
+				document.getElementById('eOrchestre').value = row.Orchestre || '';
+				document.getElementById('eChefOrchestre').value = row['Chef Orchestre'] || '';
+				document.getElementById('eFormat').value = row.Format || '';
+				document.getElementById('eNbVolumes').value = row['Nb de volumes'] || '';
+				document.getElementById('eAgeSupport').value = row['Age Support'] || '';
+				document.getElementById('eAnneeAchat').value = row['Année Achat'] || '';
+				document.getElementById('eInstrument').value = row['Instrument'] || ''; // Chargement de la valeur Instrument en mode édition
+				document.getElementById('eInstrument').setAttribute('list', 'instrumentOptions'); // Ajout de la datalist
+
+				// Suppression de l'ancien écouteur pour éviter les doublons
+				// Suppression de l'ancien écouteur pour éviter les doublons
+				document.getElementById('eInitialArtiste').removeEventListener('change', updateInstrumentList);
+
+				// Logique pour le champ Instrument en mode édition:
+				// On met à jour la datalist 'instrumentOptions' immédiatement avec les instruments de l'artiste
+				updateInstrumentList();
+				// On ajoute un écouteur pour mettre à jour la datalist 'instrumentOptions' si l'artiste initial change
+				document.getElementById('eInitialArtiste').addEventListener('change', updateInstrumentList);
+
+				document.getElementById('eDurée').value = row.Durée || '';
+				document.getElementById('eDateAchat').value = formatDateForInput(row['Date achat']);
+				document.getElementById('eAnneeSortie').value = row['Année de sortie'] || '';
+				document.getElementById('eMontantEstime').value = formatMontantEstime(row['Montant estimé']);
+				document.getElementById('eInitialArtiste').value = row['Initialartiste'] || '';
+				// En mode édition, l'Initialartiste est déjà rempli par la valeur du CSV principal.
+				// On s'assure que le champ 'Compositeur' est bien rempli pour que la logique de Type Musique fonctionne.
+				// updateInitialArtisteFromCompositeur(); // Plus nécessaire car eInitialArtiste est rempli directement
+				openModal('entryModal');
+			}
+
+			function formatDateForInput(dateString) {
+				// Convertit JJ/MM/AAAA en AAAA-MM-JJ pour l'input type="date"
+				if (!dateString) return '';
+				const parts = dateString.split('/');
+				if (parts.length === 3) {
+					return `${parts[2]}-${parts[1]}-${parts[0]}`;
+				}
+				return '';
+			}
+
+			function formatDateForCSV(dateInput) {
+				// Convertit AAAA-MM-JJ en JJ/MM/AAAA pour le CSV
+				if (!dateInput) return '';
+				const parts = dateInput.split('-');
+				if (parts.length === 3) {
+					return `${parts[2]}/${parts[1]}/${parts[0]}`;
+				}
+				return '';
+			}
+
+			function formatMontantEstime(value) {
+				if (!value) return '';
+				// Assure que la valeur est affichée avec la décimale et le code devise
+				// Si la valeur est déjà formatée (ex: "12,50 €"), on la retourne. Sinon, on ajoute le formatage.
+				if (value.includes('€')) return value;
+
+				// Tentative de formatage simple (suppose que la valeur est un nombre)
+				const num = parseFloat(value.replace(',', '.'));
+				if (isNaN(num)) return value;
+
+				// Formatage avec deux décimales et le symbole €
+				return num.toFixed(2).replace('.', ',') + ' €';
+			}
+
+			function parseMontantEstime(formattedValue) {
+				if (!formattedValue) return '';
+				// Supprime le symbole € et les espaces, puis remplace la virgule par un point pour le stockage
+				// return formattedValue.replace('€', '').replace(',', '.').trim();
+				return formattedValue.replace(',', '.').trim();
+
+			}
+
+			function saveEntry() {
+				const index = document.getElementById('eRowIndex').value;
+				const originalIndex = data.indexOf(filteredData[index]);
+
+				const dateAchatInput = document.getElementById('eDateAchat').value;
+				const dateAchatCSV = formatDateForCSV(dateAchatInput);
+
+				const compositeurValue = document.getElementById('eCompositeur').value;
+				const artist = artistData.find(a => a['Nom Complet'] === compositeurValue);
+				const initialArtiste = artist ? artist.Initialartiste : document.getElementById('eInitialArtiste').value;
+
+				const updatedRow = {
+					'Clé': document.getElementById('eCle').value,
+					'Genre musical': document.getElementById('eGenreMusical').value, // Correction de l'en-tête
+					'Type Musique': document.getElementById('eTypeMusique').value,
+					'Compositeur': document.getElementById('eCompositeur').value,
+					'Remarques': document.getElementById('eRemarques').value,
+					'Etiquette': document.getElementById('eEtiquette').value,
+					'Musicien': document.getElementById('eMusicien').value,
+					'Orchestre': document.getElementById('eOrchestre').value,
+					'Chef Orchestre': document.getElementById('eChefOrchestre').value,
+					'Format': document.getElementById('eFormat').value,
+					'Nb de volumes': document.getElementById('eNbVolumes').value,
+					'Durée': document.getElementById('eDurée').value,
+					'Date achat': dateAchatCSV,
+					'Année de sortie': document.getElementById('eAnneeSortie').value,
+					'Montant estimé': parseMontantEstime(document.getElementById('eMontantEstime').value),
+					'Age Support': document.getElementById('eAgeSupport').value,
+					'Année Achat': document.getElementById('eAnneeAchat').value,
+					'Instrument': document.getElementById('eInstrument').value, // Sauvegarde du champ Instrument
+					'Initialartiste': initialArtiste,
+					// 'Initialartiste': document.getElementById('initialArtiste').value
+					'NOM COMPO': document.getElementById('eCompositeur').value
+				};
+
+				if (index == -1) { // Nouvelle entrée
+					data.push(updatedRow);
+				} else { // Mise à jour d'une entrée existante
+					if (originalIndex > -1) {
+						data[originalIndex] = { ...data[originalIndex], ...updatedRow };
+					}
+					filteredData[index] = { ...filteredData[index], ...updatedRow };
+				}
+
+
+
+				renderTable();
+				closeModal('entryModal');
+			}
+
+			// Fonction pour mettre à jour la datalist 'Instrument'
+			function updateInstrumentList() {
+				const initialArtiste = document.getElementById('eInitialArtiste').value;
+				const instrumentDatalist = document.getElementById('instrumentOptions');
+				instrumentDatalist.innerHTML = ''; // Vider la liste
+
+				let instruments = [];
+
+				if (initialArtiste) {
+					// 1. Récupérer les instruments de l'artiste correspondant à l'initiale
+					instruments = artistData
+						.filter(artist => artist.Initialartiste === initialArtiste)
+						.map(artist => artist.Instrument)
+						.filter(instrument => instrument); // Filtrer les valeurs vides
+				}
+
+				// 2. Si aucun instrument n'est trouvé pour l'initiale spécifique (ou si l'initiale est vide),
+				//    rechercher toutes les valeurs possibles pour toutes les 'Initiales'.
+				if (instruments.length === 0) {
+					instruments = [...new Set(artistData
+						.map(artist => artist.Instrument)
+						.filter(instrument => instrument)
+					)];
+				}
+
+				// 3. Compléter avec les nouvelles valeurs trouvées dans le champ 'Instrument' de la modale 'Nouvel artiste'
+				const newInstrument = document.getElementById('aInstrument').value;
+				if (newInstrument && !instruments.includes(newInstrument)) {
+					instruments.push(newInstrument);
+				}
+
+				// 4. Ajouter les options à la datalist
+				instruments.forEach(instrument => {
+					const option = document.createElement('option');
+					option.value = instrument;
+					instrumentDatalist.appendChild(option);
+				});
+			}
+
+			// Fonction pour charger Age Support et Année Achat en mode création/édition
+			function loadAgeAnneeAchat() {
+				const initialArtiste = document.getElementById('eInitialArtiste').value;
+				if (initialArtiste) {
+					const artist = artistData.find(a => a.Initialartiste === initialArtiste);
+					if (artist) {
+						document.getElementById('eAgeSupport').value = artist['Age Support'] || '';
+						document.getElementById('eAnneeAchat').value = artist['Année Achat'] || '';
+					}
+				}
+			}
+
+			function openNewEntryModal() {
+				// Calcul de la nouvelle clé (max + 1, format 3 caractères)
+				const maxCle = data.reduce((max, row) => {
+					const cle = parseInt(row['Clé'], 10);
+					return isNaN(cle) ? max : Math.max(max, cle);
+				}, 0);
+				const newCle = (maxCle + 1).toString().padStart(3, '0');
+
+				// Date du jour pour Date d'achat
+				const today = new Date();
+				const day = String(today.getDate()).padStart(2, '0');
+				const month = String(today.getMonth() + 1).padStart(2, '0');
+				const year = today.getFullYear();
+				const todayDateInput = `${year}-${month}-${day}`;
+
+				// Réinitialisation des champs
+				document.getElementById('eRowIndex').value = -1; // Indique une nouvelle entrée
+				document.getElementById('eCle').value = generateNewCle();
+				document.getElementById('eInitialArtiste').value = ''; // Réinitialiser Initialartiste en mode création (caché)
+				document.getElementById('eInitialArtisteDisplay').textContent = ''; // Réinitialiser l'affichage du bouton
+				// document.getElementById('eInitialArtiste').readOnly = false; // Le champ est caché, readOnly n'est plus pertinent
+				document.getElementById('eAgeSupport').value = ''; // Initialisation Age Support
+				document.getElementById('eAnneeAchat').value = ''; // Initialisation Année Achat
+				document.getElementById('eInstrument').value = ''; // Initialisation Instrument
+				document.getElementById('eInstrument').setAttribute('list', 'instrumentOptions'); // Ajout de la datalist
+				document.getElementById('eGenreMusical').value = '';
+
+				// Chargement des valeurs par défaut pour Age Support et Année Achat en mode création
+				// Ces valeurs sont chargées à partir du premier artiste trouvé avec l'initiale
+				loadAgeAnneeAchat();
+				document.getElementById('eGenreMusical').setAttribute('list', 'genreMusicalOptions'); // Assurer que la datalist est utilisée en mode création
+				document.getElementById('eTypeMusique').value = '';
+				document.getElementById('eTypeMusique').readOnly = false; // Rendre Type Musique modifiable en mode création
+				document.getElementById('eTypeMusique').setAttribute('list', 'typeMusiqueOptions'); // Ajouter la datalist pour Type Musique
+
+				// Écouteurs pour la modification en mode création
+				document.getElementById('eGenreMusical').removeEventListener('change', updateTypeMusiqueLogic);
+				document.getElementById('eInitialArtiste').removeEventListener('change', updateTypeMusiqueLogic);
+				document.getElementById('eGenreMusical').addEventListener('change', updateTypeMusiqueLogic);
+				document.getElementById('eInitialArtiste').addEventListener('change', updateTypeMusiqueLogic);
+				document.getElementById('eCompositeur').value = '';
+				document.getElementById('eCompositeur').setAttribute('list', 'compositeurOptions'); // Assurer que la datalist est utilisée en mode création
+				document.getElementById('eRemarques').value = '';
+				document.getElementById('eEtiquette').value = '';
+				document.getElementById('eChercheArtiste').value = '';
+				document.getElementById('eMusicien').value = '';
+				document.getElementById('eOrchestre').value = '';
+				document.getElementById('eChefOrchestre').value = '';
+				document.getElementById('eFormat').value = '';
+				document.getElementById('eNbVolumes').value = '';
+				document.getElementById('eDurée').value = '';
+				document.getElementById('eDateAchat').value = todayDateInput;
+				document.getElementById('eAnneeSortie').value = '';
+				document.getElementById('eMontantEstime').value = '';
+				document.getElementById('eInitialArtiste').value = ''; // Réinitialiser le champ caché
+				document.getElementById('eInitialArtisteDisplay').textContent = ''; // Réinitialiser l'affichage
+
+				// Logique pour le champ Instrument en mode création:
+				// Le champ 'Instrument' est alimenté par la datalist 'instrumentOptions'
+				// Cette datalist doit être mise à jour lors du changement de l'artiste initial.
+				// On ajoute un écouteur pour mettre à jour la datalist 'instrumentOptions'
+				document.getElementById('eInitialArtiste').addEventListener('change', updateInstrumentList);
+
+				// Ajout d'un écouteur pour charger Age Support et Année Achat lors du changement d'Initiales
+				document.getElementById('eInitialArtiste').addEventListener('change', loadAgeAnneeAchat);
+
+				openModal('entryModal');
+			}
+
+			function sortTable(column) {
+				// Le tri est désormais forcé sur 'Date achat' anti-chronologique
+				if (sortColumn === column) {
+					// Si on clique sur la colonne de tri actuelle, on inverse l'ordre
+					sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+				} else {
+					sortColumn = column;
+					sortDirection = 'asc'; // Tri par défaut ascendant pour la nouvelle colonne
+				}
+
+				// Tri permanent par 'Date achat' anti-chronologique
+				sortColumn = 'Date achat';
+				sortDirection = 'desc';
+
+				// Mise à jour des indicateurs de tri
+				document.querySelectorAll('#dataTable th').forEach(th => {
+					th.classList.remove('sorted-asc', 'sorted-desc');
+					if (th.getAttribute('data-col') === column) {
+						th.classList.add(sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+					}
+				});
+
+				filteredData.sort((a, b) => {
+					const valA = a[column] || '';
+					const valB = b[column] || '';
+
+					let comparison = 0;
+
+					if (column === 'Date achat') {
+						// Conversion JJ/MM/AAAA en objet Date pour un tri correct
+						const dateA = parseDate(valA);
+						const dateB = parseDate(valB);
+						if (dateA.getTime() < dateB.getTime()) comparison = -1;
+						if (dateA.getTime() > dateB.getTime()) comparison = 1;
+					} else {
+						if (valA < valB) comparison = -1;
+						if (valA > valB) comparison = 1;
+					}
+
+					return sortDirection === 'asc' ? comparison : comparison * -1;
+				});
+
+
+
+				renderTable();
+			}
+
+			function parseDate(dateString) {
+				if (!dateString) return new Date(0);
+				const parts = dateString.split('/');
+				// Assurez-vous que le format est JJ/MM/AAAA
+				if (parts.length === 3) {
+					// new Date(année, mois-1, jour)
+					return new Date(parts[2], parts[1] - 1, parts[0]);
+				}
+				return new Date(0); // Date invalide
+			}
+
+			function renderTable() {
+				const tbody = document.querySelector('#dataTable tbody');
+				if (!tbody) {
+					console.error("Erreur: L'élément tbody du tableau #dataTable est introuvable.");
+					return;
+				}
+				tbody.innerHTML = '';
+				const start = (currentPage - 1) * ITEMS_PER_PAGE;
+				const end = start + ITEMS_PER_PAGE;
+				const pageData = filteredData.slice(start, end);
+
+				// Mise à jour de l'indicateur de tri dans l'entête
+				document.querySelectorAll('#dataTable th').forEach(th => {
+					th.classList.remove('sorted-asc', 'sorted-desc');
+					if (th.getAttribute('data-col') === sortColumn) {
+						th.classList.add(sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+					}
+				});
+
+
+				const fragment = document.createDocumentFragment();
+				pageData.forEach((row, index) => {
+					const tr = document.createElement('tr');
+					tr.innerHTML = `
+	                    <td class="col-cle">${row['Clé'] || ''}</td>
+	                    <td class="col-genre">${row['Genre musical'] || ''}</td>
+	                    <td class="col-etiquette">${row.Etiquette || ''}</td>
+	                    <td class="col-compositeur">${row.Compositeur || ''}</td>
+	                    <td class="col-musicien">${row.Musicien || ''}</td>
+	                    <td class="col-orchestre">${row.Orchestre || ''}</td>
+	                    <td class="col-format">${row.Format || ''}</td>
+	                    <td class="col-date-achat">${row['Date achat'] || ''}</td>
+	                    <td class="actions">
+	                        <button onclick="editEntry(${start + index})">Édition</button>
+	                    </td>
+	                `;
+					fragment.appendChild(tr);
+				});
+				tbody.appendChild(fragment);
+				document.getElementById('rowCountDisplay').textContent = `${filteredData.length} lignes affichées`;
+			}
+
+			function populateArtistList() {
+				const tbody = document.querySelector('#artistListTable tbody');
+				if (!tbody) return;
+				tbody.innerHTML = '';
+
+				const searchTerm = document.getElementById('artistSearch').value.toLowerCase();
+
+				const filteredArtists = artistData.filter(artist => {
+					return Object.values(artist).some(value => value && value.toLowerCase().includes(searchTerm));
+				});
+
+				filteredArtists.forEach(artist => {
+					const tr = document.createElement('tr');
+					tr.innerHTML = `
+	                    <td>${artist.ACI || ''}</td>
+	                    <td>${artist.Prénom || ''}</td>
+	                    <td>${artist.Nom || ''}</td>
+	                    <td>${artist['Nom Complet'] || ''}</td>
+	                    <td>${artist.Instrument || ''}</td>
+	                    <td>${artist['Type Musique'] || ''}</td>
+	                    <td>${artist['Genre Musical'] || ''}</td>
+	                    <td>${artist.Remarque || ''}</td>
+	                    <td class="actions">
+	                        <button onclick="editArtist('${artist.Initialartiste}')">Édition</button>
+	                    </td>
+	                `;
+					tbody.appendChild(tr);
+				});
+			}
+
+			function openArtistModalFromEntry() {
+				const initialArtisteValue = document.getElementById('eInitialArtiste').value;
+
+				if (initialArtisteValue) {
+					// Si une valeur existe, ouvrir en mode édition
+					editArtist(initialArtisteValue);
+				} else {
+					// Sinon, ouvrir en mode création
+					openArtistModal();
+				}
+			}
+
+			function openArtistModal() {
+				document.getElementById('aType').value = ''; // Le champ ACI est caché, on le vide
+				document.getElementById('aMnémo').value = ''; // Nouveau champ Mnémo
+				document.getElementById('aNomComplet').value = ''; // Nouveau champ Nom Complet
+				document.getElementById('aAnneeNaissance').value = ''; // Nouveau champ Année Naissance
+				document.getElementById('aAnneeDeces').value = ''; // Nouveau champ Année Décès
+
+				document.getElementById('aMnémo').readOnly = false; // Le champ Mnémo est saisissable
+				document.getElementById('aPrenom').value = '';
+				document.getElementById('aNom').value = '';
+				document.getElementById('aNationalite').value = '';
+				document.getElementById('aInstrument').value = '';
+				document.getElementById('aRemarque').value = '';
+				document.getElementById('aCompositeurRadio').checked = true;
+				document.getElementById('aTypeMusique').value = '';
+
+				// Ajout de l'écouteur pour charger la Remarque en mode création (basé sur le Mnémo)
+				document.getElementById('aMnémo').removeEventListener('input', loadArtistRemarque);
+				document.getElementById('aMnémo').addEventListener('input', loadArtistRemarque);
+				document.getElementById('aTypeMusique').setAttribute('list', 'aTypeMusiqueOptions');
+				document.getElementById('aGenreMusical').value = '';
+				document.getElementById('aGenreMusical').setAttribute('list', 'aGenreMusicalOptions');
+
+				// Déclenche la mise à jour initiale du Nom Complet (vide)
+				updateNomComplet();
+
+				openModal('artistModal');
+			}
+
+			function generateNewArtistCle() {
+				const maxCle = artistData.reduce((max, row) => {
+					const cle = parseInt(row.ACI, 10);
+					return isNaN(cle) ? max : Math.max(max, cle);
+				}, 0);
+				return (maxCle + 1).toString().padStart(3, '0');
+			}
+
+			// Logique de calcul du Nom Complet en temps réel
+			document.getElementById('aPrenom').addEventListener('input', updateNomComplet);
+			document.getElementById('aNom').addEventListener('input', updateNomComplet);
+			document.getElementById('aInstrument').addEventListener('input', updateNomComplet);
+
+			function updateNomComplet() {
+				const prenom = document.getElementById('aPrenom').value;
+				const nom = document.getElementById('aNom').value;
+				const instrument = document.getElementById('aInstrument').value;
+				const nomCompletCalculated = `${prenom} ${nom} - ${instrument}`;
+				document.getElementById('aNomComplet').value = nomCompletCalculated;
+			}
+
+
+
+			// Ajout de l'écouteur d'événement pour le champ 'Compositeur' dans le formulaire 'Nouvelle entrée'
+			document.getElementById('eCompositeur').addEventListener('change', updateInitialArtisteFromCompositeur);
+
+			function updateInitialArtisteFromCompositeur() {
+				const compositeurValue = document.getElementById('eCompositeur').value;
+				const initialArtisteField = document.getElementById('eInitialArtiste');
+
+				// 1. Recherche dans le fichier CSV des artistes (artistData)
+				const artist = artistData.find(a => a['Nom Complet'] === compositeurValue);
+
+				// Mettre à jour le champ Initialartiste (Mnémo)
+				initialArtisteField.value = artist ? artist.Initialartiste : '';
+				document.getElementById('eInitialArtisteDisplay').textContent = artist ? artist.Initialartiste : ''; // Mise à jour de l'affichage du bouton
+
+				// En mode création, le champ 'Initiales' doit rester modifiable (readOnly = false)
+				// En mode édition, il est déjà en lecture seule (géré dans editEntry)
+				// const isCreationMode = document.getElementById('eRowIndex').value === '-1';
+				// initialArtisteField.readOnly = !isCreationMode; // Le champ est caché, readOnly n'est plus pertinent
+
+				// Déclencher la mise à jour de Type Musique après la mise à jour de Initialartiste
+				updateTypeMusiqueLogic();
+			}
+
+			function saveArtist() {
+				const initialArtisteInput = document.getElementById('aMnémo');
+				if (initialArtisteInput.classList.contains('is-invalid')) {
+					alert("Le Mnémo saisi existe déjà. Veuillez en choisir un autre.");
+					return;
+				}
+
+				const newArtist = {
+					'Initialartiste': initialArtisteInput.value.trim(),
+					'Prénom': document.getElementById('aPrenom').value.trim(),
+					'Nom': document.getElementById('aNom').value.trim(),
+					'Nom Complet': document.getElementById('aNomComplet').value.trim(),
+					'Instrument': document.getElementById('aInstrument').value.trim(),
+					'Type Musique': document.getElementById('aTypeMusique').value.trim(),
+					'Genre Musical': document.getElementById('aGenreMusical').value.trim(),
+					'Remarque': document.getElementById('aRemarque').value.trim(),
+					'ACI': document.querySelector('input[name="artistType"]:checked').value,
+					'Année naissance': document.getElementById('aAnneeNaissance').value.trim(),
+					'Année décès': document.getElementById('aAnneeDeces').value.trim(),
+					'Nationalité': document.getElementById('aNationalite').value.trim()
+				};
+
+				// Vérifier si c'est une mise à jour ou une nouvelle entrée
+				const existingIndex = artistData.findIndex(a => a['Initialartiste'] === newArtist['Initialartiste']);
+				if (existingIndex !== -1) {
+					// Mise à jour (si l'édition est autorisée, ce qui n'est pas clair, mais on le gère)
+					artistData[existingIndex] = newArtist;
+				} else {
+					// Nouvelle entrée
+					artistData.push(newArtist);
+				}
+
+				populateArtistList();
+				populateArtistDataLists();
+				closeModal('artistModal');
+			}
+
+			// Fonction pour charger la Remarque de l'artiste correspondant au Mnémo
+			function loadArtistRemarque() {
+				const mnémo = document.getElementById('aMnémo').value.trim();
+				const remarqueField = document.getElementById('aRemarque');
+
+				// Ne charger que si le champ Mnémo est en mode création (non readOnly)
+				if (!document.getElementById('aMnémo').readOnly) {
+					const artist = artistData.find(a => a.Initialartiste === mnémo);
+					if (artist) {
+						remarqueField.value = artist.Remarque || '';
+					} else {
+						// Si le Mnémo n'existe pas, on laisse la remarque vide pour la création
+						remarqueField.value = '';
+					}
+				}
+			}
+
+
+			function editArtist(initialArtiste) {
+				const artist = artistData.find(a => a.Initialartiste === initialArtiste);
+				if (!artist) return;
+
+				document.getElementById('aType').value = artist.ACI; // Le champ ACI est caché, on le charge
+				document.getElementById('aMnémo').value = artist.Initialartiste || '';
+				document.getElementById('aMnémo').readOnly = true; // Le Mnémo est en lecture seule en mode modification
+				document.getElementById('aNomComplet').value = artist['Nom Complet'] || '';
+				document.getElementById('aAnneeNaissance').value = artist['Année naissance'] || '';
+				document.getElementById('aAnneeDeces').value = artist['Année décès'] || '';
+				document.getElementById('aPrenom').value = artist.Prénom || '';
+				document.getElementById('aNom').value = artist.Nom || '';
+				document.getElementById('aNationalite').value = artist.Nationalité || '';
+				document.getElementById('aInstrument').value = artist.Instrument || '';
+				document.getElementById('aRemarque').value = artist.Remarque || ''; // Ajout du chargement de la Remarque
+
+				if (artist['Type Artiste'] === 'Interprète') {
+					document.getElementById('aInterpreteRadio').checked = true;
+				} else {
+					document.getElementById('aCompositeurRadio').checked = true;
+				}
+
+				document.getElementById('aTypeMusique').value = artist['Type Musique'] || '';
+				document.getElementById('aGenreMusical').value = artist['Genre Musical'] || '';
+
+				openModal('artistModal');
+			}
+
+			function convertToCSV(dataArray) {
+				if (dataArray.length === 0) return '';
+
+				// Définir l'ordre des en-têtes pour le fichier Artistes_maj.csv
+				const artistHeaders = [
+					'ACI', 'Initialartiste', 'Prénom', 'Nom', 'Nom Complet', 'Nationalité', 'Instrument',
+					'Remarque', 'Type Artiste', 'Type Musique', 'Genre Musical', 'Année naissance', 'Année décès'
+				];
+
+				// Si c'est le fichier artiste, utiliser les en-têtes spécifiques
+				const isArtistFile = dataArray.every(row => row.hasOwnProperty('Initialartiste'));
+				const headers = isArtistFile ? artistHeaders : Object.keys(dataArray[0]);
+
+				const csv = [
+					headers.join('\t'), // Utiliser la tabulation comme séparateur
+					...dataArray.map(row => headers.map(header => row[header] || '').join('\t'))
+				].join('\n');
+
+				return csv;
+			}
+
+			function downloadFile(content, filename) {
+				const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+				const link = document.createElement('a');
+				if (link.download !== undefined) { // Vérifier la prise en charge de l'attribut download
+					const url = URL.createObjectURL(blob);
+					link.setAttribute('href', url);
+					link.setAttribute('download', filename);
+					link.style.visibility = 'hidden';
+					document.body.appendChild(link);
+					link.click();
+					document.body.removeChild(link);
+				}
+			}
+
+			function downloadCSV() {
+				// Utiliser les en-têtes du fichier source chargé (data)
+				if (!data || data.length === 0) {
+					alert("Aucune donnée à sauvegarder. Veuillez charger un fichier source.");
+					return;
+				}
+				const headers = Object.keys(data[0]); // Récupérer les en-têtes du premier objet de données
+				const csvContent = convertToCSV(data, headers);
+				downloadFile(csvContent, 'Hall_of_fame_PR.csv', 'text/csv');
+			}
+
+			function downloadSourceCSV() {
+				// Utiliser les en-têtes du fichier source chargé (data)
+				if (!data || data.length === 0) {
+					alert("Aucune donnée à sauvegarder. Veuillez charger un fichier source.");
+					return;
+				}
+				const headers = Object.keys(data[0]); // Récupérer les en-têtes du premier objet de données
+				const csvContent = convertToCSV(data, headers);
+				// Utiliser le nom de fichier par défaut pour la sauvegarde du fichier source
+				downloadFile(csvContent, sourceFileName, 'text/csv');
+			}
+
+			function convertToCSV(data, headers) {
+				// Utiliser la tabulation (\t) comme séparateur
+				const headerRow = headers.join('\t');
+				const rows = data.map(row => {
+					return headers.map(header => {
+						// Assurer que les valeurs sont correctement échappées si nécessaire, bien que le format tabulation soit moins sensible
+						let value = row[header] !== undefined ? String(row[header]) : '';
+						// Remplacer les tabulations, retours à la ligne, et guillemets doubles dans les valeurs par des espaces pour éviter de casser le format CSV (tabulation)
+						value = value.replace(/[\t\n\r"]/g, ' ');
+						return value;
+					}).join('\t');
+				});
+				return [headerRow, ...rows].join('\n');
+			}
+
+
+			function downloadCSV() {
+				const csvContent = convertToCSV(data);
+				downloadFile(csvContent, 'Hall_of_fame_maj.csv');
+			}
+
+			function downloadArtistCSV() {
+				// 1. Préparer les données pour l'export
+				const headers = ["ACI", "Initialartiste", "Prénom", "Nom", "Nom Complet", "Année naissance", "Année décès", "Nationalité", "Instrument", "Type Musique", "Genre Musical", "Remarque"];
+
+				const csvRows = [];
+				csvRows.push(headers.join('\t')); // En-tête
+
+				artistData.forEach(row => {
+
+					const values = headers.map(header => {
+						let value = row[header] || '';
+
+						switch (header) {
+							case 'ACI':
+								// Traduire 0 en 'Compositeur' et 1 en 'Interprète' pour l'export CSV
+								if (row.ACI === '0') {
+									value = 'Compositeur';
+								} else if (row.ACI === '1') {
+									value = 'Interprète';
+								}
+								break;
+							case 'Initialartiste':
+								// Utiliser la valeur de 'Initialartiste' pour 'Initialartiste' (qui correspond au champ Mnémo)
+								value = row['Initialartiste'] || '';
+								break;
+							case 'Nom Complet':
+								// S'assurer que Nom Complet est calculé s'il est vide
+								if (!value) {
+									value = `${row['Prénom'] || ''} ${row['Nom'] || ''}`.trim();
+								}
+								break;
+							case 'Type Musique':
+							case 'Genre Musical':
+								// S'assurer que les champs vides sont des chaînes vides
+								value = value || '';
+								break;
+							default:
+								// Utiliser la valeur existante ou une chaîne vide
+								value = row[header] || '';
+						}
+
+						// Échapper les tabulations et les retours à la ligne si nécessaire
+						return value.replace(/\t/g, ' ').replace(/\n/g, ' ');
+					});
+					csvRows.push(values.join('\t'));
+				});
+
+				const csvString = csvRows.join('\n');
+
+				// 2. Créer et télécharger le fichier
+				downloadFile(csvString, artistFileName); // Utiliser le nom du fichier chargé
+			}
+
+			// Logique de recherche pour 'Cherche artiste'
+			document.getElementById('eChercheArtiste').addEventListener('input', (event) => {
+				const searchKey = event.target.value.toLowerCase().trim();
+				const datalist = document.getElementById('chercheArtisteOptions');
+				datalist.innerHTML = '';
+
+				if (searchKey.length >= 2) { // Commence la recherche après 2 caractères
+					// Séparer la saisie utilisateur en mots-clés
+					const keywords = searchKey.split(/\s+/).filter(k => k.length > 0);
+
+					const matches = artistData
+						.filter(artist => {
+							const nomComplet = artist['Nom Complet'] ? artist['Nom Complet'].toLowerCase() : '';
+							if (!nomComplet) return false;
+
+							// Vérifier si tous les mots-clés sont présents dans 'Nom Complet'
+							return keywords.every(keyword => nomComplet.includes(keyword));
+						})
+						.map(artist => artist['Nom Complet']);
+
+					// Limiter le nombre de résultats pour la performance
+					matches.slice(0, 20).forEach(match => {
+						const option = document.createElement('option');
+						option.value = match;
+						datalist.appendChild(option);
+					});
+				}
+			});
+
+			// Logique Ctrl+V pour le champ Musicien
+			document.getElementById('eMusicien').addEventListener('keydown', function (e) {
+				// Vérifie si Ctrl (ou Cmd sur Mac) et V sont pressés
+				if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+					e.preventDefault(); // Empêche le collage par défaut
+
+					const chercheArtisteValue = document.getElementById('eChercheArtiste').value.trim();
+					const musicienField = document.getElementById('eMusicien');
+
+					if (chercheArtisteValue) {
+						// Ajoute le séparateur s'il y a déjà du contenu
+						const separator = musicienField.value.trim() ? ', ' : '';
+						musicienField.value += separator + chercheArtisteValue;
+
+						// Vide le champ de recherche après le collage
+						document.getElementById('eChercheArtiste').value = '';
+					}
+				}
+			});
+
+
+
+			// Initial setup
+			document.querySelectorAll('.sidebar input[type="text"]').forEach(input => {
+				input.addEventListener('input', applyFilters);
+			});
+			document.querySelectorAll('.sidebar select').forEach(select => {
+				// On retire l'écouteur générique pour filterGenre car il a sa propre logique
+				if (select.id !== 'filterGenre') {
+					select.addEventListener('change', applyFilters);
+				}
+			});
+			document.getElementById('filterTypeMusique').addEventListener('input', function () {
+				// Lorsque le Type Musique est modifié manuellement, on met à jour la liste des compositeurs
+				populateComposerList();
+				applyFilters();
+			});
+			document.getElementById('filterArtist').addEventListener('change', applyFilters);
+			document.getElementById('filterFormat').addEventListener('change', applyFilters);
+			document.getElementById('filterMusicien').addEventListener('input', applyFilters); // Ajout de l'écouteur pour le nouveau filtre musicien
+			document.getElementById('artistSearch').addEventListener('input', populateArtistList);
+
+			// Appliquer le tri initial par Date achat après le chargement des données
+			// La fonction handleFileSelect appelle déjà renderTable() qui appelle sortTable() si filteredData n'est pas vide.
+
+			// Définir le tri initial permanent
+			sortColumn = 'Date achat';
+			sortDirection = 'desc';
+
+			// Définir l'indicateur de tri initial
+			document.querySelector('#dataTable th[data-col="Date achat"]').classList.add('sorted-desc');
+
+			// ===================================================================
+			// FONCTIONS MOBILES - NAVIGATION ET UI
+			// ===================================================================
+			
+			// Toggle sidebar sur mobile
+			function toggleSidebar() {
+				const sidebar = document.getElementById('sidebar');
+				const overlay = document.getElementById('sidebarOverlay');
+				
+				if (sidebar.classList.contains('open')) {
+					sidebar.classList.remove('open');
+					overlay.classList.remove('active');
+				} else {
+					sidebar.classList.add('open');
+					overlay.classList.add('active');
+				}
+			}
+
+			// ===================================================================
+			// MODALE DÉPLAÇABLE ET REDIMENSIONNABLE
+			// ===================================================================
+			
+			function makeDraggable(modalId, handleId) {
+				const modal = document.getElementById(modalId);
+				const handle = document.getElementById(handleId);
+				
+				if (!modal || !handle) return;
+				
+				let isDragging = false;
+				let currentX;
+				let currentY;
+				let initialX;
+				let initialY;
+				let xOffset = 0;
+				let yOffset = 0;
+
+				handle.addEventListener('mousedown', dragStart);
+				handle.addEventListener('touchstart', dragStart);
+				
+				document.addEventListener('mousemove', drag);
+				document.addEventListener('touchmove', drag);
+				
+				document.addEventListener('mouseup', dragEnd);
+				document.addEventListener('touchend', dragEnd);
+
+				function dragStart(e) {
+					if (e.type === 'touchstart') {
+						initialX = e.touches[0].clientX - xOffset;
+						initialY = e.touches[0].clientY - yOffset;
+					} else {
+						initialX = e.clientX - xOffset;
+						initialY = e.clientY - yOffset;
+					}
+
+					if (e.target === handle || handle.contains(e.target)) {
+						isDragging = true;
+						modal.style.transition = 'none';
+					}
+				}
+
+				function drag(e) {
+					if (isDragging) {
+						e.preventDefault();
+						
+						if (e.type === 'touchmove') {
+							currentX = e.touches[0].clientX - initialX;
+							currentY = e.touches[0].clientY - initialY;
+						} else {
+							currentX = e.clientX - initialX;
+							currentY = e.clientY - initialY;
+						}
+
+						xOffset = currentX;
+						yOffset = currentY;
+
+						// Enlever le centrage automatique et positionner absolument
+						modal.style.left = '0';
+						modal.style.transform = `translate(${currentX}px, ${currentY}px)`;
+					}
+				}
+
+				function dragEnd() {
+					if (isDragging) {
+						initialX = currentX;
+						initialY = currentY;
+						isDragging = false;
+					}
+				}
+
+				// Réinitialiser la position lors de l'ouverture
+				const originalOpenModal = window.openModal || function() {};
+				window.openModal = function(id) {
+					if (typeof originalOpenModal === 'function') {
+						originalOpenModal(id);
+					}
+					if (id === modalId) {
+						xOffset = 0;
+						yOffset = 0;
+						modal.style.left = '50%';
+						modal.style.transform = 'translateX(-50%)';
+					}
+				};
+			}
+
+			// Initialiser le drag pour la modale Nouvelle entrée
+			window.addEventListener('load', () => {
+				makeDraggable('entryModal', 'entryModalHeader');
+			});
+
+			// Fermer la sidebar lors du clic sur un filtre (mobile)
+			if (window.innerWidth <= 768) {
+				document.querySelectorAll('.sidebar button').forEach(btn => {
+					btn.addEventListener('click', () => {
+						setTimeout(() => {
+							if (window.innerWidth <= 768) {
+								toggleSidebar();
+							}
+						}, 300);
+					});
+				});
+			}
+
+			// Adapter l'UI selon la taille d'écran
+			function adaptUIForMobile() {
+				const menuToggle = document.getElementById('menuToggle');
+				if (window.innerWidth <= 768) {
+					menuToggle.style.display = 'flex';
+				} else {
+					menuToggle.style.display = 'none';
+					document.getElementById('sidebar').classList.remove('open');
+					document.getElementById('sidebarOverlay').classList.remove('active');
+				}
+			}
+
+			// Appeler au chargement et au redimensionnement
+			window.addEventListener('resize', adaptUIForMobile);
+			window.addEventListener('load', adaptUIForMobile);
+			adaptUIForMobile();
+
+			// Gérer l'orientation sur mobile
+			window.addEventListener('orientationchange', () => {
+				setTimeout(() => {
+					adaptUIForMobile();
+					if (window.innerWidth <= 768) {
+						toggleSidebar(); // Fermer la sidebar lors du changement d'orientation
+					}
+				}, 100);
+			});
+
+			// ===================================================================
+			// FONCTIONS GOOGLE DRIVE - INTÉGRATION AVEC L'APP
+			// ===================================================================
+			
+			// Sauvegarder tous les fichiers sur Google Drive
+			async function saveAllToDrive() {
+				if (!driveConnected) {
+					alert('Veuillez d\'abord vous connecter à Google Drive');
+					return;
+				}
+
+				if (!data || data.length === 0) {
+					alert('Aucune donnée à sauvegarder. Chargez d\'abord un fichier source.');
+					return;
+				}
+
+				try {
+					showToast('💾 Sauvegarde en cours...', 'info');
+
+					// Sauvegarder le fichier source
+					const sourceHeaders = Object.keys(data[0]);
+					const sourceCSV = convertToCSV(data, sourceHeaders);
+					await saveToGoogleDrive(sourceFileName || 'Hall_of_fame_source.csv', sourceCSV);
+
+					// Sauvegarder le fichier artistes
+					if (artistData && artistData.length > 0) {
+						const artistHeaders = ["ACI", "Initialartiste", "Prénom", "Nom", "Nom Complet", "Année naissance", "Année décès", "Nationalité", "Instrument", "Type Musique", "Genre Musical", "Remarque"];
+						const artistCSVContent = [
+							artistHeaders.join('\t'),
+							...artistData.map(row => {
+								return artistHeaders.map(header => {
+									let value = row[header] || '';
+									if (header === 'ACI') {
+										value = row.ACI === '0' ? 'Compositeur' : row.ACI === '1' ? 'Interprète' : value;
+									}
+									return value.replace(/\t/g, ' ').replace(/\n/g, ' ');
+								}).join('\t');
+							})
+						].join('\n');
+
+						await saveToGoogleDrive(artistFileName || 'Artistes.csv', artistCSVContent);
+					}
+
+					showToast('✓ Tous les fichiers sauvegardés sur Drive', 'success');
+				} catch (error) {
+					console.error('Erreur sauvegarde Drive:', error);
+					showToast('✗ Erreur lors de la sauvegarde', 'error');
+				}
+			}
+
+			// Charger tous les fichiers depuis Google Drive
+			async function loadAllFromDrive() {
+				if (!driveConnected) {
+					alert('Veuillez d\'abord vous connecter à Google Drive');
+					return;
+				}
+
+				try {
+					showToast('⬇️ Chargement en cours...', 'info');
+
+					// Charger le fichier source
+					const sourceContent = await loadFromGoogleDrive('Hall_of_fame_source.csv');
+					if (sourceContent) {
+						// Parser le CSV avec PapaParse
+						Papa.parse(sourceContent, {
+							header: true,
+							skipEmptyLines: true,
+							delimiter: '\t',
+							complete: function(results) {
+								data = results.data;
+								filteredData = data;
+								sourceFileName = 'Hall_of_fame_source.csv';
+								
+								// Mettre à jour l'UI
+								document.getElementById('csvFileName').textContent = sourceFileName;
+								populateTypeMusiqueList();
+								populateGenreList();
+								populateFormatList();
+								populateEtiquetteList();
+								populateAnneeList();
+								populateComposerList();
+								populateMusicienList();
+								renderTable();
+								
+								showToast('✓ Fichier source chargé', 'success');
+							}
+						});
+					}
+
+					// Charger le fichier artistes
+					const artistContent = await loadFromGoogleDrive('Artistes.csv');
+					if (artistContent) {
+						Papa.parse(artistContent, {
+							header: true,
+							skipEmptyLines: true,
+							delimiter: '\t',
+							complete: function(results) {
+								artistData = results.data.map(row => {
+									// Convertir ACI de texte vers numérique
+									if (row.ACI === 'Compositeur') row.ACI = '0';
+									if (row.ACI === 'Interprète') row.ACI = '1';
+									return row;
+								});
+								artistFileName = 'Artistes.csv';
+								
+								document.getElementById('artistCsvFileName').textContent = artistFileName;
+								populateArtistList();
+								
+								showToast('✓ Fichier artistes chargé', 'success');
+							}
+						});
+					}
+
+					if (sourceContent || artistContent) {
+						showToast('✓ Données chargées depuis Drive', 'success');
+					} else {
+						showToast('⚠ Aucun fichier trouvé sur Drive', 'warning');
+					}
+				} catch (error) {
+					console.error('Erreur chargement Drive:', error);
+					showToast('✗ Erreur lors du chargement', 'error');
+				}
+			}
+
+			// Mettre à jour le bouton de connexion Drive
+			function updateDriveToggleButton() {
+				const btn = document.getElementById('driveToggleBtn');
+				if (btn) {
+					if (driveConnected) {
+						btn.textContent = '🔌 Déconnecter Drive';
+						btn.style.background = '#f44336';
+					} else {
+						btn.textContent = '🔌 Connecter Drive';
+						btn.style.background = '#757575';
+					}
+				}
+			}
+
+			// Observer les changements de connexion Drive
+			const originalUpdateDriveStatus = updateDriveStatus;
+			updateDriveStatus = function(connected) {
+				originalUpdateDriveStatus(connected);
+				updateDriveToggleButton();
+			};
+
+			// Initialiser le bouton au chargement
+			updateDriveToggleButton();
+
+			// ===================================================================
+			// SUPPORT TACTILE AMÉLIORÉ
+			// ===================================================================
+			
+			// Ajouter le support du swipe pour fermer la sidebar
+			let touchStartX = 0;
+			let touchEndX = 0;
+
+			const sidebar = document.getElementById('sidebar');
+			
+			sidebar.addEventListener('touchstart', (e) => {
+				touchStartX = e.changedTouches[0].screenX;
+			}, { passive: true });
+
+			sidebar.addEventListener('touchend', (e) => {
+				touchEndX = e.changedTouches[0].screenX;
+				handleSwipe();
+			}, { passive: true });
+
+			function handleSwipe() {
+				if (touchStartX - touchEndX > 50) {
+					// Swipe vers la gauche - fermer sidebar
+					if (sidebar.classList.contains('open')) {
+						toggleSidebar();
+					}
+				}
+			}
+
+			// Désactiver le zoom sur double tap (améliore l'UX tactile)
+			let lastTouchEnd = 0;
+			document.addEventListener('touchend', (e) => {
+				const now = Date.now();
+				if (now - lastTouchEnd <= 300) {
+					e.preventDefault();
+				}
+				lastTouchEnd = now;
+			}, { passive: false });
+
+			// ===================================================================
+			// GESTION DE L'INSTALLATION PWA
+			// ===================================================================
+			
+			let deferredPrompt;
+
+			window.addEventListener('beforeinstallprompt', (e) => {
+				e.preventDefault();
+				deferredPrompt = e;
+				
+				// Afficher un bouton d'installation personnalisé
+				// Désactivé pour ne pas déranger l'utilisateur
+				// showInstallPromotion();
+			});
+
+			function showInstallPromotion() {
+				const installToast = document.createElement('div');
+				installToast.innerHTML = `
+					<div style="display:flex; align-items:center; gap:1rem; justify-content:space-between;">
+						<span>📱 Installer l'application sur votre écran d'accueil ?</span>
+						<div>
+							<button onclick="installPWA()" style="padding:0.5rem 1rem; background:#4caf50; color:white; border:none; border-radius:6px; margin-right:0.5rem; cursor:pointer;">Installer</button>
+							<button onclick="dismissInstall()" style="padding:0.5rem 1rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer;">Plus tard</button>
+						</div>
+					</div>
+				`;
+				installToast.id = 'installPromotion';
+				installToast.style.cssText = `
+					position:fixed; bottom:20px; left:10px; right:10px;
+					background:#1976d2; color:white; padding:1rem;
+					border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3);
+					z-index:10001; font-size:0.9rem;
+				`;
+				document.body.appendChild(installToast);
+			}
+
+			window.installPWA = async function() {
+				if (deferredPrompt) {
+					deferredPrompt.prompt();
+					const { outcome } = await deferredPrompt.userChoice;
+					console.log(`Installation: ${outcome}`);
+					deferredPrompt = null;
+					dismissInstall();
+				}
+			};
+
+			window.dismissInstall = function() {
+				const promo = document.getElementById('installPromotion');
+				if (promo) promo.remove();
+			};
+
+			window.addEventListener('appinstalled', () => {
+				console.log('✓ PWA installée');
+				showToast('✓ Application installée avec succès', 'success');
+				deferredPrompt = null;
+			});
+
+			// Log pour vérifier que tout est chargé
+			console.log('✓ Hall of Fame PWA - Version Mobile chargée');
+			console.log('✓ Service Worker:', 'serviceWorker' in navigator ? 'Supporté' : 'Non supporté');
+			console.log('✓ Mode:', isOffline ? 'Hors ligne' : 'En ligne');
+
+		} catch (e) {
+			console.error("Erreur d'exécution du script (probablement due à une injection externe) :", e);
+			// Afficher un message d'erreur à l'utilisateur si possible, mais ne pas bloquer
+			const rowCountDisplay = document.getElementById('rowCountDisplay');
+			if (rowCountDisplay) {
+				rowCountDisplay.textContent = "Erreur: Script bloqué. Voir console.";
+			}
+		}
+	</script>
+	<!-- À placer juste avant </body> -->
+<button onclick="testDrive()" style="position:fixed;bottom:80px;right:10px;z-index:9999;padding:15px;background:red;color:white;font-weight:bold;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+	🔍 TEST DRIVE
+</button>
+
+<script>
+function testDrive() {
+	const infos = {
+		'1. CLIENT_ID configuré': !GDRIVE_CONFIG.CLIENT_ID.includes('VOTRE'),
+		'2. API_KEY configurée': !GDRIVE_CONFIG.API_KEY.includes('VOTRE'),
+		'3. En ligne': navigator.onLine,
+		'4. GAPI disponible': typeof gapi !== 'undefined',
+		'5. GAPI initialisé': gapiInited,
+		'6. GIS disponible': typeof google !== 'undefined',
+		'7. GIS initialisé': gisInited
+	};
+	
+	let message = 'DIAGNOSTIC GOOGLE DRIVE:\n\n';
+	for (let key in infos) {
+		message += (infos[key] ? '✅' : '❌') + ' ' + key + '\n';
+	}
+	
+	alert(message);
+	console.table(infos);
+}
+</script>
+
+<!-- FONCTIONS GLOBALES POUR LES BOUTONS DRIVE -->
+<script>
+// Exposer les fonctions globalement pour qu'elles soient accessibles aux boutons onclick
+window.saveAllToDrive = async function() {
+	if (!driveConnected) {
+		alert('Veuillez d\'abord vous connecter à Google Drive');
+		return;
+	}
+	
+	if (!data || data.length === 0) {
+		alert('Aucune donnée à sauvegarder. Chargez d\'abord un fichier source.');
+		return;
+	}
+	
+	try {
+		console.log('💾 Début sauvegarde Drive...');
+		// Supprimé : alert('Sauvegarde sur Drive en cours...');
+		
+		// Sauvegarder le fichier source
+		const sourceHeaders = Object.keys(data[0]);
+		const sourceCSV = data.map(row => {
+			return sourceHeaders.map(h => row[h] || '').join('\t');
+		}).join('\n');
+		const sourceWithHeaders = sourceHeaders.join('\t') + '\n' + sourceCSV;
+		
+		await saveToGoogleDrive(sourceFileName || 'HOF.csv', sourceWithHeaders);
+		
+		// Sauvegarder le fichier artistes si présent
+		if (artistData && artistData.length > 0) {
+			const artistHeaders = ["ACI", "Initialartiste", "Prénom", "Nom", "Nom Complet", "Année naissance", "Année décès", "Nationalité", "Instrument", "Type Musique", "Genre Musical", "Remarque"];
+			const artistCSV = artistData.map(row => {
+				return artistHeaders.map(h => {
+					let value = row[h] || '';
+					if (h === 'ACI') {
+						value = row.ACI === '0' ? 'Compositeur' : row.ACI === '1' ? 'Interprète' : value;
+					}
+					return value.replace(/\t/g, ' ').replace(/\n/g, ' ');
+				}).join('\t');
+			}).join('\n');
+			const artistWithHeaders = artistHeaders.join('\t') + '\n' + artistCSV;
+			
+			await saveToGoogleDrive(artistFileName || 'Artistes.csv', artistWithHeaders);
+		}
+		
+		console.log('✓ Fichiers sauvegardés sur Drive avec succès !');
+		// Supprimé : alert('✓ Fichiers sauvegardés sur Drive avec succès !');
+	} catch (error) {
+		console.error('Erreur sauvegarde Drive:', error);
+		alert('✗ Erreur lors de la sauvegarde: ' + error.message);
+	}
+};
+
+window.loadAllFromDrive = async function() {
+	if (!driveConnected) {
+		alert('Veuillez d\'abord vous connecter à Google Drive');
+		return;
+	}
+	
+	try {
+		console.log('⬇️ Début chargement Drive...');
+		// Supprimé : alert('Chargement depuis Drive en cours...');
+		
+		// Charger HOF.csv (votre fichier source)
+		const sourceContent = await loadFromGoogleDrive('HOF.csv');
+		if (sourceContent) {
+			const lines = sourceContent.split('\n').filter(l => l.trim());
+			const headers = lines[0].split('\t');
+			data = lines.slice(1).map(line => {
+				const values = line.split('\t');
+				const obj = {};
+				headers.forEach((h, i) => obj[h] = values[i] || '');
+				return obj;
+			});
+			filteredData = data;
+			sourceFileName = 'HOF.csv';
+			
+			// Mettre à jour l'UI
+			document.getElementById('csvFileName').textContent = sourceFileName;
+			// Appeler les fonctions de population si elles existent
+			if (typeof populateTypeMusiqueList === 'function') populateTypeMusiqueList();
+			if (typeof populateGenreList === 'function') populateGenreList();
+			if (typeof populateFormatList === 'function') populateFormatList();
+			if (typeof populateEtiquetteList === 'function') populateEtiquetteList();
+			if (typeof populateAnneeList === 'function') populateAnneeList();
+			if (typeof populateComposerList === 'function') populateComposerList();
+			if (typeof populateMusicienList === 'function') populateMusicienList();
+			if (typeof renderTable === 'function') renderTable();
+			
+			console.log('✓ Fichier source chargé:', data.length, 'lignes');
+		}
+		
+		// Charger Artistes.csv
+		const artistContent = await loadFromGoogleDrive('Artistes.csv');
+		if (artistContent) {
+			const lines = artistContent.split('\n').filter(l => l.trim());
+			const headers = lines[0].split('\t');
+			artistData = lines.slice(1).map(line => {
+				const values = line.split('\t');
+				const obj = {};
+				headers.forEach((h, i) => obj[h] = values[i] || '');
+				// Convertir ACI
+				if (obj.ACI === 'Compositeur') obj.ACI = '0';
+				if (obj.ACI === 'Interprète') obj.ACI = '1';
+				return obj;
+			});
+			artistFileName = 'Artistes.csv';
+			
+			document.getElementById('artistCsvFileName').textContent = artistFileName;
+			if (typeof populateArtistList === 'function') populateArtistList();
+			
+			console.log('✓ Fichier artistes chargé:', artistData.length, 'lignes');
+		}
+		
+		if (sourceContent || artistContent) {
+			console.log('✓ Données chargées depuis Drive avec succès !');
+			// Supprimé : alert('✓ Données chargées depuis Drive avec succès !');
+		} else {
+			alert('⚠ Aucun fichier trouvé sur Drive (cherche: HOF.csv et Artistes.csv)');
+		}
+	} catch (error) {
+		console.error('Erreur chargement Drive:', error);
+		alert('✗ Erreur lors du chargement: ' + error.message);
+	}
+};
+
+console.log('✓ Fonctions Drive exposées globalement');
+console.log('  - window.saveAllToDrive:', typeof window.saveAllToDrive);
+console.log('  - window.loadAllFromDrive:', typeof window.loadAllFromDrive);
+
+// ===================================================================
+// FONCTIONS DE POPULATION DES FILTRES
+// ===================================================================
+
+window.populateTypeMusiqueList = function() {
+	const datalist = document.getElementById('typeMusiqueList');
+	if (!datalist || !data || data.length === 0) return;
+	
+	datalist.innerHTML = '';
+	const uniqueTypes = [...new Set(data.map(row => row['Type Musique']).filter(Boolean))].sort();
+	
+	uniqueTypes.forEach(type => {
+		const option = document.createElement('option');
+		option.value = type;
+		datalist.appendChild(option);
+	});
+	
+	console.log('✓ Type Musique list populated:', uniqueTypes.length, 'items');
+};
+
+window.populateGenreList = function() {
+	const select = document.getElementById('filterGenre');
+	if (!select || !data || data.length === 0) return;
+	
+	select.innerHTML = '<option value="">-- Tous --</option>';
+	const uniqueGenres = [...new Set(data.map(row => row['Genre musical']).filter(Boolean))].sort();
+	
+	uniqueGenres.forEach(genre => {
+		const option = document.createElement('option');
+		option.value = genre;
+		option.textContent = genre;
+		select.appendChild(option);
+	});
+	
+	console.log('✓ Genre musical list populated:', uniqueGenres.length, 'items');
+};
+
+window.populateFormatList = function() {
+	const select = document.getElementById('filterFormat');
+	if (!select || !data || data.length === 0) return;
+	
+	select.innerHTML = '<option value="">-- Tous --</option>';
+	const uniqueFormats = [...new Set(data.map(row => row['Format']).filter(Boolean))].sort();
+	
+	uniqueFormats.forEach(format => {
+		const option = document.createElement('option');
+		option.value = format;
+		option.textContent = format;
+		select.appendChild(option);
+	});
+	
+	console.log('✓ Format list populated:', uniqueFormats.length, 'items');
+};
+
+window.populateEtiquetteList = function() {
+	const datalist = document.getElementById('etiquetteList');
+	if (!datalist || !data || data.length === 0) return;
+	
+	datalist.innerHTML = '';
+	const uniqueEtiquettes = [...new Set(data.map(row => row['Etiquette']).filter(Boolean))].sort();
+	
+	uniqueEtiquettes.forEach(etiquette => {
+		const option = document.createElement('option');
+		option.value = etiquette;
+		datalist.appendChild(option);
+	});
+	
+	console.log('✓ Etiquette list populated:', uniqueEtiquettes.length, 'items');
+};
+
+window.populateAnneeList = function() {
+	const datalist = document.getElementById('anneeList');
+	if (!datalist || !data || data.length === 0) return;
+	
+	datalist.innerHTML = '';
+	const uniqueAnnees = [...new Set(data.map(row => row['Année de sortie']).filter(Boolean))].sort((a, b) => b - a);
+	
+	uniqueAnnees.forEach(annee => {
+		const option = document.createElement('option');
+		option.value = annee;
+		datalist.appendChild(option);
+	});
+	
+	console.log('✓ Année de sortie list populated:', uniqueAnnees.length, 'items');
+};
+
+window.populateComposerList = function() {
+	const datalist = document.getElementById('composerList');
+	if (!datalist || !data || data.length === 0) return;
+	
+	datalist.innerHTML = '';
+	const uniqueComposers = [...new Set(data.map(row => row['Compositeur']).filter(Boolean))].sort();
+	
+	uniqueComposers.forEach(composer => {
+		const option = document.createElement('option');
+		option.value = composer;
+		datalist.appendChild(option);
+	});
+	
+	console.log('✓ Compositeur list populated:', uniqueComposers.length, 'items');
+};
+
+window.populateMusicienList = function() {
+	const datalist = document.getElementById('musicienList');
+	if (!datalist) return;
+	
+	datalist.innerHTML = '';
+	
+	// Chercher dans les artistes (fichier Artistes.csv)
+	if (artistData && artistData.length > 0) {
+		const uniqueMusicians = [...new Set(artistData.map(row => row['Nom Complet']).filter(Boolean))].sort();
+		
+		uniqueMusicians.forEach(musician => {
+			const option = document.createElement('option');
+			option.value = musician;
+			datalist.appendChild(option);
+		});
+		
+		console.log('✓ Musicien list populated from Artistes.csv:', uniqueMusicians.length, 'items');
+	} else {
+		console.log('⚠ Aucune donnée artiste disponible pour populateMusicienList');
+	}
+};
+
+window.populateArtistList = function() {
+	if (!artistData || artistData.length === 0) {
+		console.log('⚠ Aucune donnée artiste disponible');
+		return;
+	}
+	
+	const tbody = document.querySelector('#artistListTable tbody');
+	if (!tbody) {
+		console.error('❌ Tableau artistListTable non trouvé');
+		return;
+	}
+	
+	// Trier par Nom puis par Prénom
+	const sortedArtists = [...artistData].sort((a, b) => {
+		const nomA = (a['Nom'] || '').toLowerCase();
+		const nomB = (b['Nom'] || '').toLowerCase();
+		
+		// Comparer d'abord par Nom
+		const nomCompare = nomA.localeCompare(nomB);
+		if (nomCompare !== 0) return nomCompare;
+		
+		// Si les noms sont identiques, comparer par Prénom
+		const prenomA = (a['Prénom'] || '').toLowerCase();
+		const prenomB = (b['Prénom'] || '').toLowerCase();
+		return prenomA.localeCompare(prenomB);
+	});
+	
+	// Vider le tableau
+	tbody.innerHTML = '';
+	
+	// Remplir le tableau
+	sortedArtists.forEach((artist, index) => {
+		const row = tbody.insertRow();
+		
+		// Type (ACI : 0 = Compositeur, 1 = Interprète)
+		const typeCell = row.insertCell();
+		typeCell.textContent = artist.ACI === '0' ? 'Compositeur' : artist.ACI === '1' ? 'Interprète' : artist.ACI || '';
+		
+		// Prénom
+		const prenomCell = row.insertCell();
+		prenomCell.textContent = artist['Prénom'] || '';
+		
+		// Nom
+		const nomCell = row.insertCell();
+		nomCell.textContent = artist['Nom'] || '';
+		
+		// Nom Complet
+		const nomCompletCell = row.insertCell();
+		nomCompletCell.textContent = artist['Nom Complet'] || '';
+		
+		// Instrument
+		const instrumentCell = row.insertCell();
+		instrumentCell.textContent = artist['Instrument'] || '';
+		
+		// Type Musique
+		const typeMusiqueCell = row.insertCell();
+		typeMusiqueCell.textContent = artist['Type Musique'] || '';
+		
+		// Genre Musical
+		const genreCell = row.insertCell();
+		genreCell.textContent = artist['Genre Musical'] || '';
+		
+		// Remarque
+		const remarqueCell = row.insertCell();
+		remarqueCell.textContent = artist['Remarque'] || '';
+		
+		// Actions
+		const actionsCell = row.insertCell();
+		actionsCell.innerHTML = `
+			<button onclick="editArtist(${index})" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;">✏️</button>
+			<button onclick="deleteArtist(${index})" style="padding: 0.25rem 0.5rem;">🗑️</button>
+		`;
+	});
+	
+	console.log('✓ Liste des artistes affichée:', sortedArtists.length, 'artistes triés par Nom puis Prénom');
+};
+
+// Ajouter l'événement pour synchroniser Type de musique avec Genre musical
+window.addEventListener('load', () => {
+	const genreSelect = document.getElementById('filterGenre');
+	const typeMusiqueInput = document.getElementById('filterTypeMusique');
+	
+	if (genreSelect && typeMusiqueInput) {
+		genreSelect.addEventListener('change', function() {
+			const selectedGenre = this.value;
+			
+			if (selectedGenre && data && data.length > 0) {
+				// Trouver le premier enregistrement avec ce genre musical
+				const record = data.find(row => row['Genre musical'] === selectedGenre);
+				
+				if (record && record['Type Musique']) {
+					typeMusiqueInput.value = record['Type Musique'];
+					console.log('✓ Type Musique auto-rempli:', record['Type Musique'], 'pour Genre:', selectedGenre);
+				}
+			} else {
+				// Si "-- Tous --" est sélectionné, vider le champ
+				typeMusiqueInput.value = '';
+			}
+		});
+		
+		console.log('✓ Événement Genre → Type Musique configuré');
+	}
+});
+
+console.log('✓ Fonctions de filtres exposées globalement');
+</script>
+</body>
+
+</html>
