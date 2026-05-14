@@ -1582,12 +1582,12 @@
 	}
 
 	function disconnectFromDrive() {
-		if (accessToken) {
-			google.accounts.oauth2.revoke(accessToken);
-			accessToken = null;
-			driveConnected = false;
-			updateDriveStatus(false);
-		}
+		if (!accessToken) return;
+		if (!confirm('⚠️ Déconnecter Google Drive ?\n\nLes modifications non sauvegardées ne seront pas synchronisées.')) return;
+		google.accounts.oauth2.revoke(accessToken);
+		accessToken = null;
+		driveConnected = false;
+		updateDriveStatus(false);
 	}
 
 	function updateDriveStatus(connected) {
