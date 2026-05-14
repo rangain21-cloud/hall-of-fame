@@ -6137,6 +6137,30 @@ window.syncFileInput = function(sourcInput, targetId) {
 		};
 	}
 })();
+
+// ===================================================================
+// TOUCHE RETOUR ANDROID — Confirmation avant de quitter l'application
+// ===================================================================
+(function() {
+	// Empiler un état fictif dans l'historique au chargement de la page.
+	// Tant que l'utilisateur ne confirme pas, on le renvoie sur cet état.
+	history.pushState({ hofBackGuard: true }, '');
+
+	window.addEventListener('popstate', function(e) {
+		const confirmed = confirm(
+			'⚠️ Quitter Hall of Fame ?\n\nLes modifications non sauvegardées sur Google Drive seront perdues.'
+		);
+		if (confirmed) {
+			// Laisser le navigateur continuer en arrière (quitter la PWA)
+			history.back();
+		} else {
+			// Remettre l'état garde pour intercepter le prochain appui
+			history.pushState({ hofBackGuard: true }, '');
+		}
+	});
+
+	console.log('✓ Garde touche Retour Android initialisé');
+})();
 </script>
 </body>
 
