@@ -3032,7 +3032,7 @@ window.addEventListener('pagehide', () => {
 					<div class="mobile-section-body" id="mobileFiltersBody">
 						<label for="mFilterTypeMusique">Type de musique</label>
 						<input list="typeMusiqueList" id="mFilterTypeMusique" autocomplete="off"
-							oninput="document.getElementById('filterTypeMusique').value=this.value; applyFilters();">
+							oninput="document.getElementById('filterTypeMusique').value=this.value; populateComposerList(); applyFilters();">
 
 						<label for="mFilterGenre">Liste par genre musical</label>
 						<select id="mFilterGenre" autocomplete="off"
@@ -3875,7 +3875,14 @@ window.addEventListener('pagehide', () => {
 			document.getElementById('showArtistListBtn').addEventListener('click', () => openModal('artistListModal'));
 			document.getElementById('filterFormat').addEventListener('change', applyFilters);
 
-			// Tri sur entête colonne désactivé (supprimé à la demande)
+			// Règle 4 : saisie directe dans "Type de musique" → raffraîchir la liste des compositeurs
+			document.getElementById('filterTypeMusique').addEventListener('input', function() {
+				populateComposerList();
+				applyFilters();
+				// Sync champ mobile
+				const mTM = document.getElementById('mFilterTypeMusique');
+				if (mTM) mTM.value = this.value;
+			});
 
 			function handleFileSelect(event) {
 				const file = event.target.files[0];
@@ -4168,7 +4175,9 @@ window.addEventListener('pagehide', () => {
 			function populateComposerList() {
 				const filterArtist = document.getElementById('filterArtist');
 				const selectedTypeMusique = document.getElementById('filterTypeMusique').value;
+				const prevValue = filterArtist.value;
 
+				// Règle 4 : filtrer les compositeurs selon le Type Musique actif
 				const compositeurs = new Set();
 				data.forEach(row => {
 					if (row.Compositeur && (!selectedTypeMusique || row['Type Musique'] === selectedTypeMusique)) {
@@ -4183,8 +4192,22 @@ window.addEventListener('pagehide', () => {
 					option.textContent = value;
 					filterArtist.appendChild(option);
 				});
-				// Forcer la sélection de "Tous" — certains Android sélectionnent le 1er item non-vide
-				filterArtist.selectedIndex = 0;
+
+				// Conserver la sélection si elle est encore valide pour ce Type Musique
+				if (prevValue && compositeurs.has(prevValue)) {
+					filterArtist.value = prevValue;
+				} else {
+					filterArtist.selectedIndex = 0;
+					// Si le compositeur précédent n'est plus valide, on vide explicitement
+					if (prevValue) filterArtist.value = '';
+				}
+
+				// Sync select mobile compositeur
+				const mArtist = document.getElementById('mFilterArtist');
+				if (mArtist) {
+					mArtist.innerHTML = filterArtist.innerHTML;
+					mArtist.value = filterArtist.value;
+				}
 			}
 
 			function validateMnémo() {
@@ -4284,18 +4307,31 @@ window.addEventListener('pagehide', () => {
 				});
 			}
 
-			// Fonction pour mettre à jour le filtre Format en fonction des filtres appliqués
+			// Règle 5 : Liste par support réduite aux valeurs trouvées pour Genre + Compositeur + Musicien
 			function updateFormatFilter() {
 				const filterFormat = document.getElementById('filterFormat');
 				const currentFormatValue = filterFormat.value;
 
-				// 1. Récupérer les formats uniques des données filtrées
+				// Contexte actif : Genre musical + Compositeur + Musicien (hors Format lui-même)
+				const selGenre    = document.getElementById('filterGenre').value.toLowerCase();
+				const selArtist   = document.getElementById('filterArtist').value.toLowerCase();
+				const selMusicien = document.getElementById('filterMusicien').value.toLowerCase();
+
+				// Sous-ensemble de lignes correspondant à ce contexte
+				const contextRows = data.filter(row => {
+					const genreMatch    = !selGenre    || (row['Genre musical'] && row['Genre musical'].toLowerCase().includes(selGenre));
+					const artistMatch   = !selArtist   || (row.Compositeur && row.Compositeur.toLowerCase().includes(selArtist));
+					const musicienMatch = !selMusicien || (row.Musicien && row.Musicien.split(',').some(m => m.trim().toLowerCase().includes(selMusicien)));
+					return genreMatch && artistMatch && musicienMatch;
+				});
+
+				// Formats disponibles pour ce contexte
 				const filteredFormats = new Set();
-				filteredData.forEach(row => {
+				contextRows.forEach(row => {
 					if (row.Format) row.Format.split(',').forEach(f => filteredFormats.add(f.trim()));
 				});
 
-				// 2. Mettre à jour les options du select
+				// Mettre à jour les options du select desktop
 				filterFormat.innerHTML = '<option value="">--- Tous les supports ---</option>';
 				[...filteredFormats].sort().forEach(value => {
 					const option = document.createElement('option');
@@ -4304,11 +4340,18 @@ window.addEventListener('pagehide', () => {
 					filterFormat.appendChild(option);
 				});
 
-				// 3. Restaurer la valeur sélectionnée si elle existe toujours
-				if (filteredFormats.has(currentFormatValue)) {
+				// Restaurer la valeur si elle reste valide dans ce contexte
+				if (currentFormatValue && filteredFormats.has(currentFormatValue)) {
 					filterFormat.value = currentFormatValue;
 				} else {
 					filterFormat.value = '';
+				}
+
+				// Sync select mobile Support
+				const mFormat = document.getElementById('mFilterFormat');
+				if (mFormat) {
+					mFormat.innerHTML = filterFormat.innerHTML;
+					mFormat.value = filterFormat.value;
 				}
 			}
 
