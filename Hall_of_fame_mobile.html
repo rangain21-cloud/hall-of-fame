@@ -3032,7 +3032,7 @@ window.addEventListener('pagehide', () => {
 					<div class="mobile-section-body" id="mobileFiltersBody">
 						<label for="mFilterTypeMusique">Type de musique</label>
 						<input list="typeMusiqueList" id="mFilterTypeMusique" autocomplete="off"
-							oninput="document.getElementById('filterTypeMusique').value=this.value;">
+							oninput="document.getElementById('filterTypeMusique').value=this.value; applyFilters();">
 
 						<label for="mFilterGenre">Liste par genre musical</label>
 						<select id="mFilterGenre" autocomplete="off"
@@ -3040,13 +3040,13 @@ window.addEventListener('pagehide', () => {
 
 						<label for="mFilterArtist">Liste par compositeur</label>
 						<select id="mFilterArtist" autocomplete="off"
-							onchange="document.getElementById('filterArtist').value=this.value;">
+							onchange="document.getElementById('filterArtist').value=this.value; applyFilters();">
 							<option value="">--- Tous les compositeurs ---</option>
 						</select>
 
 						<label for="mFilterMusicien">Liste par musicien</label>
 						<input list="musicienList" id="mFilterMusicien" autocomplete="off"
-							oninput="document.getElementById('filterMusicien').value=this.value;">
+							oninput="document.getElementById('filterMusicien').value=this.value; applyFilters();">
 
 						<label for="mFilterFormat">Liste par support</label>
 						<select id="mFilterFormat" autocomplete="off"
@@ -3054,15 +3054,15 @@ window.addEventListener('pagehide', () => {
 
 						<label for="mFilterEtiquette">Liste par étiquette</label>
 						<input list="etiquetteList" id="mFilterEtiquette" autocomplete="off"
-							oninput="document.getElementById('filterEtiquette').value=this.value;">
+							oninput="document.getElementById('filterEtiquette').value=this.value; applyFilters();">
 
 						<label for="mFilterAnnee">Liste par année de sortie</label>
 						<input list="anneeList" id="mFilterAnnee" autocomplete="off"
-							oninput="document.getElementById('filterAnnee').value=this.value;">
+							oninput="document.getElementById('filterAnnee').value=this.value; applyFilters();">
 
 						<label for="mFilterRemarques">Recherche par remarques</label>
 						<input type="text" id="mFilterRemarques" autocomplete="off"
-							oninput="document.getElementById('filterRemarques').value=this.value;">
+							oninput="document.getElementById('filterRemarques').value=this.value; applyFilters();">
 
 						<button onclick="syncMobileFilters(); applyFilters(); toggleSidebar();"
 							style="background:#334a91; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
@@ -6364,11 +6364,34 @@ window.syncMobileSelects = function() {
 			};
 			console.log('✓ populateFilters patché pour sync mobile selects');
 		} else {
-			// Retry si populateFilters pas encore définie
 			setTimeout(_patchPopulate, 300);
 		}
 	};
 	_patchPopulate();
+
+	// Patch filterGenre : quand handleGenreChange met à jour filterTypeMusique,
+	// on recopie aussi dans mFilterTypeMusique
+	let _patchGenre = function() {
+		const filterGenre = document.getElementById('filterGenre');
+		const filterTypeMusique = document.getElementById('filterTypeMusique');
+		if (filterGenre && filterTypeMusique) {
+			filterGenre.addEventListener('change', function() {
+				setTimeout(function() {
+					const mTM = document.getElementById('mFilterTypeMusique');
+					if (mTM) mTM.value = filterTypeMusique.value;
+					// Aussi sync le select mFilterGenre
+					const mG = document.getElementById('mFilterGenre');
+					if (mG) mG.value = filterGenre.value;
+					// Sync liste compositeurs mobile après populateComposerList
+					setTimeout(window.syncMobileSelects, 80);
+				}, 30);
+			});
+			console.log('✓ Patch filterGenre → mFilterTypeMusique configuré');
+		} else {
+			setTimeout(_patchGenre, 300);
+		}
+	};
+	_patchGenre();
 })();
 
 // Synchronisation initiale au chargement
