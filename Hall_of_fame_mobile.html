@@ -3027,9 +3027,9 @@ window.addEventListener('pagehide', () => {
 				<div class="mobile-section-box">
 					<div class="mobile-section-header" onclick="toggleMobileSection('mobileFiltersBody', this)">
 						<span class="mobile-section-title">🔍 Filtres &amp; Actions</span>
-						<span class="mobile-section-chevron">▼</span>
+						<span class="mobile-section-chevron" style="transform:rotate(-90deg)">▼</span>
 					</div>
-					<div class="mobile-section-body open" id="mobileFiltersBody">
+					<div class="mobile-section-body" id="mobileFiltersBody">
 						<label for="mFilterTypeMusique">Type de musique</label>
 						<input list="typeMusiqueList" id="mFilterTypeMusique" autocomplete="off"
 							oninput="document.getElementById('filterTypeMusique').value=this.value;">
@@ -3080,9 +3080,9 @@ window.addEventListener('pagehide', () => {
 				<div class="mobile-section-box">
 					<div class="mobile-section-header" onclick="toggleMobileSection('mobileFilesBody', this)">
 						<span class="mobile-section-title">📁 Fichiers CSV</span>
-						<span class="mobile-section-chevron">▼</span>
+						<span class="mobile-section-chevron" style="transform:rotate(-90deg)">▼</span>
 					</div>
-					<div class="mobile-section-body open" id="mobileFilesBody">
+					<div class="mobile-section-body" id="mobileFilesBody">
 						<label for="csvFileInputMobile" class="highlight-btn">📁 Charger fichier source</label>
 						<input type="file" id="csvFileInputMobile" accept=".csv,.txt" style="display:none;"
 							onchange="syncFileInput(this, 'csvFileInput')">
@@ -3108,7 +3108,7 @@ window.addEventListener('pagehide', () => {
 						<span class="mobile-section-title">☁ Google Drive</span>
 						<span class="mobile-section-chevron">▼</span>
 					</div>
-					<div class="mobile-section-body" id="mobiledriveBody">
+					<div class="mobile-section-body open" id="mobiledriveBody">
 						<button id="driveStatusBtnMobile" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()"
 							style="background:#757575; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
 							☁ Connecter Drive</button>
@@ -3125,7 +3125,7 @@ window.addEventListener('pagehide', () => {
 				<div class="mobile-section-box">
 					<div class="mobile-section-header" onclick="toggleMobileSection('mobileToolsBody', this)">
 						<span class="mobile-section-title">📋 Outils</span>
-						<span class="mobile-section-chevron">▼</span>
+						<span class="mobile-section-chevron" style="transform:rotate(-90deg)">▼</span>
 					</div>
 					<div class="mobile-section-body" id="mobileToolsBody">
 						<button onclick="openModal('artistListModal'); toggleSidebar();"
@@ -6374,14 +6374,6 @@ window.syncMobileSelects = function() {
 // Synchronisation initiale au chargement
 window.addEventListener('load', () => {
 	setTimeout(window.syncMobileSelects, 500);
-	// Initialiser les chevrons des sections fermées
-	document.querySelectorAll('.mobile-section-body:not(.open)').forEach(body => {
-		const header = body.previousElementSibling;
-		if (header) {
-			const chevron = header.querySelector('.mobile-section-chevron');
-			if (chevron) chevron.style.transform = 'rotate(-90deg)';
-		}
-	});
 });
 
 // Synchronise un input file mobile avec l'input file original (déclenche le même handler)
