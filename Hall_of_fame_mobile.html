@@ -3035,13 +3035,12 @@ window.addEventListener('pagehide', () => {
 							oninput="document.getElementById('filterTypeMusique').value=this.value; populateComposerList(); applyFilters();">
 
 						<label for="mFilterGenre">Liste par genre musical</label>
-						<select id="mFilterGenre" autocomplete="off"
-							onchange="
+						<input list="genreList" id="mFilterGenre" autocomplete="off"
+							oninput="
 								const fG = document.getElementById('filterGenre');
 								fG.value = this.value;
-								/* Déclenche handleGenreChange qui sync tout (TypeMusique, compositeurs, support, applyFilters) */
-								fG.dispatchEvent(new Event('change'));
-							"></select>
+								handleGenreChange();
+							">
 
 						<label for="mFilterArtist">Liste par compositeur</label>
 						<select id="mFilterArtist" autocomplete="off"
@@ -3939,6 +3938,30 @@ window.addEventListener('pagehide', () => {
 				if (mAn) mAn.value = this.value;
 			});
 
+			// ── Genre → Type Musique (branché une seule fois, fonction globale) ──
+			function handleGenreChange() {
+				const filterGenre      = document.getElementById('filterGenre');
+				const filterTypeMusique = document.getElementById('filterTypeMusique');
+				const selectedGenre    = filterGenre.value;
+
+				// Règle 3 : Genre écrase Type Musique
+				filterTypeMusique.value = (selectedGenre && window._genreToTypeMusique && window._genreToTypeMusique[selectedGenre])
+					? window._genreToTypeMusique[selectedGenre] : '';
+
+				// Sync champs mobiles
+				const mTM = document.getElementById('mFilterTypeMusique');
+				if (mTM) mTM.value = filterTypeMusique.value;
+				const mG = document.getElementById('mFilterGenre');
+				if (mG) mG.value = selectedGenre;
+
+				// Règle 4 : liste compositeurs filtrée par Type Musique
+				populateComposerList();
+				// Règle 5 : support filtré par Genre + Compositeur + Musicien
+				updateFormatFilter();
+				applyFilters();
+			}
+			document.getElementById('filterGenre').addEventListener('change', handleGenreChange);
+
 			// Remarques
 			document.getElementById('filterRemarques').addEventListener('input', function() {
 				applyFilters();
@@ -4127,6 +4150,9 @@ window.addEventListener('pagehide', () => {
 					if (row['Chef Orchestre']) chefsOrchestre.add(row['Chef Orchestre']); // Nouveau
 				});
 
+				// Exposer la map globalement pour handleGenreChange (défini hors de populateFilters)
+				window._genreToTypeMusique = genreToFirstTypeMusique;
+
 				// Type de musique (datalist pour input)
 				const typeMusiqueList = document.getElementById('typeMusiqueList');
 				typeMusiqueList.innerHTML = '';
@@ -4136,7 +4162,7 @@ window.addEventListener('pagehide', () => {
 					typeMusiqueList.appendChild(option);
 				});
 
-				// Liste par genre musical (select)
+				// Liste par genre musical (select desktop)
 				filterGenre.innerHTML = '<option value="">--- Tous les genres ---</option>';
 				[...genres].sort().forEach(value => {
 					const option = document.createElement('option');
@@ -4144,30 +4170,23 @@ window.addEventListener('pagehide', () => {
 					option.textContent = value;
 					filterGenre.appendChild(option);
 				});
-				filterGenre.selectedIndex = 0; // Forcer "Tous" sur Android
+				filterGenre.selectedIndex = 0;
 
-				// Ajouter l'écouteur pour la logique Genre -> Type Musique
-				filterGenre.removeEventListener('change', handleGenreChange); // S'assurer qu'il n'y a qu'un seul écouteur
-				filterGenre.addEventListener('change', handleGenreChange);
-
-				function handleGenreChange() {
-					const selectedGenre = filterGenre.value;
-					// Règle 3 : Genre écrase Type Musique
-					if (selectedGenre && genreToFirstTypeMusique[selectedGenre]) {
-						filterTypeMusique.value = genreToFirstTypeMusique[selectedGenre];
-					} else {
-						filterTypeMusique.value = '';
-					}
-					// Sync champs mobiles
-					const mTM = document.getElementById('mFilterTypeMusique');
-					if (mTM) mTM.value = filterTypeMusique.value;
-					const mG = document.getElementById('mFilterGenre');
-					if (mG) mG.value = selectedGenre;
-					// Règle 4 : recalcul liste compositeurs + règle 5 : support
-					populateComposerList();
-					updateFormatFilter();
-					applyFilters();
+				// Datalist pour le champ mobile mFilterGenre (saisissable)
+				let genreList = document.getElementById('genreList');
+				if (!genreList) {
+					genreList = document.createElement('datalist');
+					genreList.id = 'genreList';
+					document.body.appendChild(genreList);
 				}
+				genreList.innerHTML = '';
+				[...genres].sort().forEach(value => {
+					const option = document.createElement('option');
+					option.value = value;
+					genreList.appendChild(option);
+				});
+
+				// L'écouteur Genre→TypeMusique est branché une seule fois (voir après populateFilters)
 
 				// Liste par musicien (datalist pour input)
 				const musicienList = document.getElementById('musicienList');
@@ -6440,13 +6459,11 @@ window.syncFiltersToMobile = function() {
  * À appeler après chaque populateFilters().
  */
 window.syncMobileSelects = function() {
-	// Genre musical
+	// Genre musical : mFilterGenre est un input, on sync juste la valeur
 	const srcGenre = document.getElementById('filterGenre');
 	const dstGenre = document.getElementById('mFilterGenre');
-	if (srcGenre && dstGenre) {
-		dstGenre.innerHTML = srcGenre.innerHTML;
-		dstGenre.value = srcGenre.value;
-	}
+	if (srcGenre && dstGenre) dstGenre.value = srcGenre.value;
+
 	// Compositeur
 	const srcArtist = document.getElementById('filterArtist');
 	const dstArtist = document.getElementById('mFilterArtist');
