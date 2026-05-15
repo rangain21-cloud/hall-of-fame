@@ -3036,21 +3036,37 @@ window.addEventListener('pagehide', () => {
 
 						<label for="mFilterGenre">Liste par genre musical</label>
 						<select id="mFilterGenre" autocomplete="off"
-							onchange="document.getElementById('filterGenre').value=this.value; document.getElementById('filterGenre').dispatchEvent(new Event('change'));"></select>
+							onchange="
+								const fG = document.getElementById('filterGenre');
+								fG.value = this.value;
+								/* Déclenche handleGenreChange qui sync tout (TypeMusique, compositeurs, support, applyFilters) */
+								fG.dispatchEvent(new Event('change'));
+							"></select>
 
 						<label for="mFilterArtist">Liste par compositeur</label>
 						<select id="mFilterArtist" autocomplete="off"
-							onchange="document.getElementById('filterArtist').value=this.value; applyFilters();">
+							onchange="
+								document.getElementById('filterArtist').value = this.value;
+								updateFormatFilter();
+								applyFilters();
+							">
 							<option value="">--- Tous les compositeurs ---</option>
 						</select>
 
 						<label for="mFilterMusicien">Liste par musicien</label>
 						<input list="musicienList" id="mFilterMusicien" autocomplete="off"
-							oninput="document.getElementById('filterMusicien').value=this.value; applyFilters();">
+							oninput="
+								document.getElementById('filterMusicien').value = this.value;
+								updateFormatFilter();
+								applyFilters();
+							">
 
 						<label for="mFilterFormat">Liste par support</label>
 						<select id="mFilterFormat" autocomplete="off"
-							onchange="document.getElementById('filterFormat').value=this.value; document.getElementById('filterFormat').dispatchEvent(new Event('change'));"></select>
+							onchange="
+								document.getElementById('filterFormat').value = this.value;
+								applyFilters();
+							"></select>
 
 						<label for="mFilterEtiquette">Liste par étiquette</label>
 						<input list="etiquetteList" id="mFilterEtiquette" autocomplete="off"
@@ -3873,15 +3889,61 @@ window.addEventListener('pagehide', () => {
 			// Écouteur pour la validation du champ Mnémo
 			document.getElementById('aMnémo').addEventListener('input', validateMnémo);
 			document.getElementById('showArtistListBtn').addEventListener('click', () => openModal('artistListModal'));
-			document.getElementById('filterFormat').addEventListener('change', applyFilters);
 
-			// Règle 4 : saisie directe dans "Type de musique" → raffraîchir la liste des compositeurs
+			// ── Écouteurs filtres desktop : application immédiate sans bouton ──
+
+			// Format : applyFilters direct
+			document.getElementById('filterFormat').addEventListener('change', function() {
+				applyFilters();
+				// Sync mobile
+				const mF = document.getElementById('mFilterFormat');
+				if (mF) mF.value = this.value;
+			});
+
+			// Type de musique : recalcul compositeurs + applyFilters
 			document.getElementById('filterTypeMusique').addEventListener('input', function() {
 				populateComposerList();
+				updateFormatFilter();
 				applyFilters();
-				// Sync champ mobile
 				const mTM = document.getElementById('mFilterTypeMusique');
 				if (mTM) mTM.value = this.value;
+			});
+
+			// Compositeur : recalcul support + applyFilters
+			document.getElementById('filterArtist').addEventListener('change', function() {
+				updateFormatFilter();
+				applyFilters();
+				const mA = document.getElementById('mFilterArtist');
+				if (mA) mA.value = this.value;
+			});
+
+			// Musicien : recalcul support + applyFilters
+			document.getElementById('filterMusicien').addEventListener('input', function() {
+				updateFormatFilter();
+				applyFilters();
+				const mM = document.getElementById('mFilterMusicien');
+				if (mM) mM.value = this.value;
+			});
+
+			// Étiquette
+			document.getElementById('filterEtiquette').addEventListener('input', function() {
+				applyFilters();
+				const mE = document.getElementById('mFilterEtiquette');
+				if (mE) mE.value = this.value;
+			});
+
+			// Année de sortie
+			document.getElementById('filterAnnee').addEventListener('input', function() {
+				applyFilters();
+				const mAn = document.getElementById('mFilterAnnee');
+				if (mAn) mAn.value = this.value;
+			});
+
+			// Remarques
+			document.getElementById('filterRemarques').addEventListener('input', function() {
+				applyFilters();
+				const mR = document.getElementById('mFilterRemarques');
+				if (mR) mR.value = this.value;
 			});
 
 			function handleFileSelect(event) {
@@ -4090,15 +4152,20 @@ window.addEventListener('pagehide', () => {
 
 				function handleGenreChange() {
 					const selectedGenre = filterGenre.value;
-					// Logique: Lorsqu'une valeur est choisie dans le sélecteur Liste par genre musical, 
-					// la valeur correspondante de Type de musique est automatiquement attribuée au champ Type Musique.
+					// Règle 3 : Genre écrase Type Musique
 					if (selectedGenre && genreToFirstTypeMusique[selectedGenre]) {
 						filterTypeMusique.value = genreToFirstTypeMusique[selectedGenre];
 					} else {
 						filterTypeMusique.value = '';
 					}
-					// Après avoir mis à jour le Type Musique, on applique les filtres
+					// Sync champs mobiles
+					const mTM = document.getElementById('mFilterTypeMusique');
+					if (mTM) mTM.value = filterTypeMusique.value;
+					const mG = document.getElementById('mFilterGenre');
+					if (mG) mG.value = selectedGenre;
+					// Règle 4 : recalcul liste compositeurs + règle 5 : support
 					populateComposerList();
+					updateFormatFilter();
 					applyFilters();
 				}
 
@@ -6405,36 +6472,11 @@ window.syncMobileSelects = function() {
 				_origPop.apply(this, arguments);
 				setTimeout(window.syncMobileSelects, 50);
 			};
-			console.log('✓ populateFilters patché pour sync mobile selects');
 		} else {
 			setTimeout(_patchPopulate, 300);
 		}
 	};
 	_patchPopulate();
-
-	// Patch filterGenre : quand handleGenreChange met à jour filterTypeMusique,
-	// on recopie aussi dans mFilterTypeMusique
-	let _patchGenre = function() {
-		const filterGenre = document.getElementById('filterGenre');
-		const filterTypeMusique = document.getElementById('filterTypeMusique');
-		if (filterGenre && filterTypeMusique) {
-			filterGenre.addEventListener('change', function() {
-				setTimeout(function() {
-					const mTM = document.getElementById('mFilterTypeMusique');
-					if (mTM) mTM.value = filterTypeMusique.value;
-					// Aussi sync le select mFilterGenre
-					const mG = document.getElementById('mFilterGenre');
-					if (mG) mG.value = filterGenre.value;
-					// Sync liste compositeurs mobile après populateComposerList
-					setTimeout(window.syncMobileSelects, 80);
-				}, 30);
-			});
-			console.log('✓ Patch filterGenre → mFilterTypeMusique configuré');
-		} else {
-			setTimeout(_patchGenre, 300);
-		}
-	};
-	_patchGenre();
 })();
 
 // Synchronisation initiale au chargement
