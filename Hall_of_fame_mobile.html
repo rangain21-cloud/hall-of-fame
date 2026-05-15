@@ -634,6 +634,13 @@
 			}
 		}
 
+		/* Masquer filtres/actions/sauvegardes desktop dans la sidebar sur mobile */
+		@media (max-width: 768px) {
+			.sidebar-desktop-only {
+				display: none !important;
+			}
+		}
+
 		/* Section mobile dans la sidebar */
 		.sidebar-mobile-only {
 			display: none;
@@ -2963,55 +2970,55 @@ window.addEventListener('pagehide', () => {
 	
 	<div class="layout">
 		<aside class="sidebar" id="sidebar">
-			<!-- Bandeau de Pilotage -->
-			<div>
-				<label for="filterTypeMusique">Type de musique</label>
-				<input list="typeMusiqueList" id="filterTypeMusique" autocomplete="off">
-				<datalist id="typeMusiqueList"></datalist>
-			</div>
-			<div>
-				<label for="filterGenre">Liste par genre musical</label>
-				<select id="filterGenre" autocomplete="off"></select>
-			</div>
-			<div>
-				<label for="filterArtist">Liste par compositeur</label>
-				<select id="filterArtist" autocomplete="off">
-					<option value="">--- Tous les compositeurs ---</option>
-				</select>
-			</div>
-			<div>
-				<label for="filterMusicien">Liste par musicien</label>
-				<input list="musicienList" id="filterMusicien" autocomplete="off">
-				<datalist id="musicienList"></datalist>
-			</div>
-			<div>
-				<label for="filterFormat">Liste par support</label>
-				<select id="filterFormat" autocomplete="off"></select>
-			</div>
-			<div>
-				<label for="filterEtiquette">Liste par étiquette</label>
-				<input list="etiquetteList" id="filterEtiquette" autocomplete="off">
-				<datalist id="etiquetteList"></datalist>
-			</div>
-			<div>
-				<label for="filterAnnee">Liste par année de sortie</label>
-				<input list="anneeList" id="filterAnnee" autocomplete="off">
-				<datalist id="anneeList"></datalist>
-			</div>
+			<!-- Bandeau de Pilotage — masqué sur mobile (accessible via burger ☰ → Filtres & Actions) -->
+			<div class="sidebar-desktop-only">
+				<div>
+					<label for="filterTypeMusique">Type de musique</label>
+					<input list="typeMusiqueList" id="filterTypeMusique" autocomplete="off">
+					<datalist id="typeMusiqueList"></datalist>
+				</div>
+				<div>
+					<label for="filterGenre">Liste par genre musical</label>
+					<select id="filterGenre" autocomplete="off"></select>
+				</div>
+				<div>
+					<label for="filterArtist">Liste par compositeur</label>
+					<select id="filterArtist" autocomplete="off">
+						<option value="">--- Tous les compositeurs ---</option>
+					</select>
+				</div>
+				<div>
+					<label for="filterMusicien">Liste par musicien</label>
+					<input list="musicienList" id="filterMusicien" autocomplete="off">
+					<datalist id="musicienList"></datalist>
+				</div>
+				<div>
+					<label for="filterFormat">Liste par support</label>
+					<select id="filterFormat" autocomplete="off"></select>
+				</div>
+				<div>
+					<label for="filterEtiquette">Liste par étiquette</label>
+					<input list="etiquetteList" id="filterEtiquette" autocomplete="off">
+					<datalist id="etiquetteList"></datalist>
+				</div>
+				<div>
+					<label for="filterAnnee">Liste par année de sortie</label>
+					<input list="anneeList" id="filterAnnee" autocomplete="off">
+					<datalist id="anneeList"></datalist>
+				</div>
+				<div>
+					<label for="filterRemarques">Recherche par remarques</label>
+					<input type="text" id="filterRemarques" autocomplete="off">
+				</div>
+				<button onclick="applyFilters()">🔍 Appliquer filtres</button>
+				<button onclick="clearFilters()">🗑️ Effacer filtres</button>
+				<button onclick="openNewEntryModal()">➕ Nouvelle entrée</button>
 
+				<hr style="border:none; border-top:2px solid #cfd3e1; margin:1rem 0;">
 
-			<div>
-				<label for="filterRemarques">Recherche par remarques</label>
-				<input type="text" id="filterRemarques" autocomplete="off">
+				<button onclick="downloadSourceCSV()">💾 Sauver fichier source</button>
+				<button onclick="downloadArtistCSV()">💾 Sauver fichier artistes</button>
 			</div>
-			<button onclick="applyFilters()">🔍 Appliquer filtres</button>
-			<button onclick="clearFilters()">🗑️ Effacer filtres</button>
-			<button onclick="openNewEntryModal()">➕ Nouvelle entrée</button>
-
-			<hr style="border:none; border-top:2px solid #cfd3e1; margin:1rem 0;">
-			
-			<button onclick="downloadSourceCSV()">💾 Sauver fichier source</button>
-			<button onclick="downloadArtistCSV()">💾 Sauver fichier artistes</button>
 
 			<!-- Section visible uniquement sur mobile (remplace la topbar inaccessible) -->
 			<div class="sidebar-mobile-only">
