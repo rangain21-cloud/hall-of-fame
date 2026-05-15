@@ -668,6 +668,71 @@
 				width: 100%;
 				text-align: center;
 			}
+			/* Pavé collapsible dans la sidebar mobile */
+			.mobile-section-box {
+				background: #fff;
+				border: 1px solid #cfd3e1;
+				border-radius: 10px;
+				overflow: hidden;
+				margin-bottom: 0.25rem;
+			}
+			.mobile-section-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 0.65rem 0.75rem;
+				background: #e9ecf6;
+				cursor: pointer;
+				user-select: none;
+				-webkit-user-select: none;
+				min-height: 48px;
+			}
+			.mobile-section-header:active {
+				background: #d8dde8;
+			}
+			.mobile-section-title {
+				font-size: 0.78rem;
+				font-weight: 700;
+				color: #334a91;
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+				margin: 0;
+			}
+			.mobile-section-chevron {
+				font-size: 0.85rem;
+				color: #476bb6;
+				transition: transform 0.2s;
+				display: inline-block;
+			}
+			.mobile-section-body {
+				display: none;
+				flex-direction: column;
+				gap: 0.5rem;
+				padding: 0.75rem;
+			}
+			.mobile-section-body.open {
+				display: flex;
+			}
+			.mobile-section-body input,
+			.mobile-section-body select {
+				width: 100%;
+				padding: 0.65rem 0.75rem;
+				box-sizing: border-box;
+				min-height: 44px;
+				font-size: 0.95rem;
+				border: 2px solid #d8dbe8;
+				border-radius: 8px;
+			}
+			.mobile-section-body label {
+				font-size: 0.8rem;
+				font-weight: bold;
+				color: #334a91;
+				margin-bottom: -0.25rem;
+			}
+			.mobile-section-body button {
+				width: 100%;
+				text-align: center;
+			}
 		}
 
 		/* Très petits écrans (< 400px) */
@@ -2950,35 +3015,121 @@ window.addEventListener('pagehide', () => {
 
 			<!-- Section visible uniquement sur mobile (remplace la topbar inaccessible) -->
 			<div class="sidebar-mobile-only">
-				<p class="section-title">📁 Fichiers CSV</p>
-				<label for="csvFileInputMobile" class="highlight-btn">📁 Charger fichier source</label>
-				<input type="file" id="csvFileInputMobile" accept=".csv,.txt" style="display:none;"
-					onchange="syncFileInput(this, 'csvFileInput')">
-				<span id="csvFileNameMobile" style="font-size:0.75rem; color:#555;"></span>
 
-				<label for="artistCsvFileInputMobile" class="highlight-btn">👤 Charger fichier artistes</label>
-				<input type="file" id="artistCsvFileInputMobile" accept=".csv,.txt" style="display:none;"
-					onchange="syncFileInput(this, 'artistCsvFileInput')">
-				<span id="artistCsvFileNameMobile" style="font-size:0.75rem; color:#555;"></span>
+				<!-- ═══ PAVÉ FILTRES & ACTIONS ═══ -->
+				<div class="mobile-section-box">
+					<div class="mobile-section-header" onclick="toggleMobileSection('mobileFiltersBody', this)">
+						<span class="mobile-section-title">🔍 Filtres &amp; Actions</span>
+						<span class="mobile-section-chevron">▼</span>
+					</div>
+					<div class="mobile-section-body open" id="mobileFiltersBody">
+						<label for="mFilterTypeMusique">Type de musique</label>
+						<input list="typeMusiqueList" id="mFilterTypeMusique" autocomplete="off"
+							oninput="document.getElementById('filterTypeMusique').value=this.value;">
 
-				<p class="section-title">☁ Google Drive</p>
-				<button id="driveStatusBtnMobile" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()"
-					style="background:#757575; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
-					☁ Connecter Drive</button>
-				<button onclick="loadAllFromDrive(); toggleSidebar();"
-					style="background:#388e3c; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
-					⬇️ Charger depuis Drive</button>
-				<button onclick="saveAllToDrive();"
-					style="background:#1976d2; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
-					💾 Sauvegarder sur Drive</button>
+						<label for="mFilterGenre">Liste par genre musical</label>
+						<select id="mFilterGenre" autocomplete="off"
+							onchange="document.getElementById('filterGenre').value=this.value; document.getElementById('filterGenre').dispatchEvent(new Event('change'));"></select>
 
-				<p class="section-title">📋 Outils</p>
-				<button onclick="openModal('artistListModal'); toggleSidebar();"
-					style="background:#476bb6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
-					📋 Liste des Artistes</button>
-				<button onclick="openVisualizationModal(); toggleSidebar();"
-					style="background:#334a91; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
-					📊 Statistiques</button>
+						<label for="mFilterArtist">Liste par compositeur</label>
+						<select id="mFilterArtist" autocomplete="off"
+							onchange="document.getElementById('filterArtist').value=this.value;">
+							<option value="">--- Tous les compositeurs ---</option>
+						</select>
+
+						<label for="mFilterMusicien">Liste par musicien</label>
+						<input list="musicienList" id="mFilterMusicien" autocomplete="off"
+							oninput="document.getElementById('filterMusicien').value=this.value;">
+
+						<label for="mFilterFormat">Liste par support</label>
+						<select id="mFilterFormat" autocomplete="off"
+							onchange="document.getElementById('filterFormat').value=this.value; document.getElementById('filterFormat').dispatchEvent(new Event('change'));"></select>
+
+						<label for="mFilterEtiquette">Liste par étiquette</label>
+						<input list="etiquetteList" id="mFilterEtiquette" autocomplete="off"
+							oninput="document.getElementById('filterEtiquette').value=this.value;">
+
+						<label for="mFilterAnnee">Liste par année de sortie</label>
+						<input list="anneeList" id="mFilterAnnee" autocomplete="off"
+							oninput="document.getElementById('filterAnnee').value=this.value;">
+
+						<label for="mFilterRemarques">Recherche par remarques</label>
+						<input type="text" id="mFilterRemarques" autocomplete="off"
+							oninput="document.getElementById('filterRemarques').value=this.value;">
+
+						<button onclick="syncMobileFilters(); applyFilters(); toggleSidebar();"
+							style="background:#334a91; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							🔍 Appliquer filtres</button>
+						<button onclick="clearFilters(); syncFiltersToMobile(); toggleSidebar();"
+							style="background:#757575; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							🗑️ Effacer filtres</button>
+						<button onclick="openNewEntryModal(); toggleSidebar();"
+							style="background:#476bb6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							➕ Nouvelle entrée</button>
+					</div>
+				</div>
+
+				<!-- ═══ PAVÉ FICHIERS CSV ═══ -->
+				<div class="mobile-section-box">
+					<div class="mobile-section-header" onclick="toggleMobileSection('mobileFilesBody', this)">
+						<span class="mobile-section-title">📁 Fichiers CSV</span>
+						<span class="mobile-section-chevron">▼</span>
+					</div>
+					<div class="mobile-section-body open" id="mobileFilesBody">
+						<label for="csvFileInputMobile" class="highlight-btn">📁 Charger fichier source</label>
+						<input type="file" id="csvFileInputMobile" accept=".csv,.txt" style="display:none;"
+							onchange="syncFileInput(this, 'csvFileInput')">
+						<span id="csvFileNameMobile" style="font-size:0.75rem; color:#555;"></span>
+
+						<label for="artistCsvFileInputMobile" class="highlight-btn">👤 Charger fichier artistes</label>
+						<input type="file" id="artistCsvFileInputMobile" accept=".csv,.txt" style="display:none;"
+							onchange="syncFileInput(this, 'artistCsvFileInput')">
+						<span id="artistCsvFileNameMobile" style="font-size:0.75rem; color:#555;"></span>
+
+						<button onclick="downloadSourceCSV();"
+							style="background:#5c6bc0; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							💾 Sauver fichier source</button>
+						<button onclick="downloadArtistCSV();"
+							style="background:#5c6bc0; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							💾 Sauver fichier artistes</button>
+					</div>
+				</div>
+
+				<!-- ═══ PAVÉ GOOGLE DRIVE ═══ -->
+				<div class="mobile-section-box">
+					<div class="mobile-section-header" onclick="toggleMobileSection('mobiledriveBody', this)">
+						<span class="mobile-section-title">☁ Google Drive</span>
+						<span class="mobile-section-chevron">▼</span>
+					</div>
+					<div class="mobile-section-body" id="mobiledriveBody">
+						<button id="driveStatusBtnMobile" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()"
+							style="background:#757575; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							☁ Connecter Drive</button>
+						<button onclick="loadAllFromDrive(); toggleSidebar();"
+							style="background:#388e3c; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							⬇️ Charger depuis Drive</button>
+						<button onclick="saveAllToDrive();"
+							style="background:#1976d2; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							💾 Sauvegarder sur Drive</button>
+					</div>
+				</div>
+
+				<!-- ═══ PAVÉ OUTILS ═══ -->
+				<div class="mobile-section-box">
+					<div class="mobile-section-header" onclick="toggleMobileSection('mobileToolsBody', this)">
+						<span class="mobile-section-title">📋 Outils</span>
+						<span class="mobile-section-chevron">▼</span>
+					</div>
+					<div class="mobile-section-body" id="mobileToolsBody">
+						<button onclick="openModal('artistListModal'); toggleSidebar();"
+							style="background:#476bb6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							📋 Liste des Artistes</button>
+						<button onclick="openVisualizationModal(); toggleSidebar();"
+							style="background:#334a91; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							📊 Statistiques</button>
+					</div>
+				</div>
+
 			</div>
 		</aside>
 		<main class="main">
@@ -6108,6 +6259,123 @@ window.initMainTableResizers = initMainTableResizers;
 console.log('✓ Contrôle largeur colonnes + poignées tactiles initialisés');
 
 console.log('✓ Fonctions de filtres exposées globalement');
+
+// ===================================================================
+// PAVÉS COLLAPSIBLES SIDEBAR MOBILE
+// ===================================================================
+
+/** Ouvre/ferme un pavé de la sidebar mobile */
+window.toggleMobileSection = function(bodyId, headerEl) {
+	const body = document.getElementById(bodyId);
+	if (!body) return;
+	const isOpen = body.classList.toggle('open');
+	const chevron = headerEl ? headerEl.querySelector('.mobile-section-chevron') : null;
+	if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+};
+
+/**
+ * Synchronise les valeurs des champs de filtre mobiles vers les champs principaux
+ * (utilisé avant applyFilters() pour s'assurer que tout est cohérent)
+ */
+window.syncMobileFilters = function() {
+	const pairs = [
+		['mFilterTypeMusique', 'filterTypeMusique'],
+		['mFilterGenre',       'filterGenre'],
+		['mFilterArtist',      'filterArtist'],
+		['mFilterMusicien',    'filterMusicien'],
+		['mFilterFormat',      'filterFormat'],
+		['mFilterEtiquette',   'filterEtiquette'],
+		['mFilterAnnee',       'filterAnnee'],
+		['mFilterRemarques',   'filterRemarques'],
+	];
+	pairs.forEach(([mId, dId]) => {
+		const mEl = document.getElementById(mId);
+		const dEl = document.getElementById(dId);
+		if (mEl && dEl) dEl.value = mEl.value;
+	});
+};
+
+/**
+ * Copie les valeurs des filtres principaux vers leurs doublons mobiles
+ * (utilisé après clearFilters() pour réinitialiser les champs mobiles aussi)
+ */
+window.syncFiltersToMobile = function() {
+	const pairs = [
+		['filterTypeMusique', 'mFilterTypeMusique'],
+		['filterGenre',       'mFilterGenre'],
+		['filterArtist',      'mFilterArtist'],
+		['filterMusicien',    'mFilterMusicien'],
+		['filterFormat',      'mFilterFormat'],
+		['filterEtiquette',   'mFilterEtiquette'],
+		['filterAnnee',       'mFilterAnnee'],
+		['filterRemarques',   'mFilterRemarques'],
+	];
+	pairs.forEach(([dId, mId]) => {
+		const dEl = document.getElementById(dId);
+		const mEl = document.getElementById(mId);
+		if (dEl && mEl) mEl.value = dEl.value;
+	});
+};
+
+/**
+ * Synchronise les <select> mobiles (Genre, Compositeur, Support)
+ * après le peuplement des <select> principaux via populateFilters().
+ * À appeler après chaque populateFilters().
+ */
+window.syncMobileSelects = function() {
+	// Genre musical
+	const srcGenre = document.getElementById('filterGenre');
+	const dstGenre = document.getElementById('mFilterGenre');
+	if (srcGenre && dstGenre) {
+		dstGenre.innerHTML = srcGenre.innerHTML;
+		dstGenre.value = srcGenre.value;
+	}
+	// Compositeur
+	const srcArtist = document.getElementById('filterArtist');
+	const dstArtist = document.getElementById('mFilterArtist');
+	if (srcArtist && dstArtist) {
+		dstArtist.innerHTML = srcArtist.innerHTML;
+		dstArtist.value = srcArtist.value;
+	}
+	// Support/Format
+	const srcFormat = document.getElementById('filterFormat');
+	const dstFormat = document.getElementById('mFilterFormat');
+	if (srcFormat && dstFormat) {
+		dstFormat.innerHTML = srcFormat.innerHTML;
+		dstFormat.value = srcFormat.value;
+	}
+};
+
+// Patch de populateFilters pour synchroniser automatiquement les selects mobiles
+(function() {
+	let _patchPopulate = function() {
+		const _origPop = window.populateFilters;
+		if (typeof _origPop === 'function') {
+			window.populateFilters = function() {
+				_origPop.apply(this, arguments);
+				setTimeout(window.syncMobileSelects, 50);
+			};
+			console.log('✓ populateFilters patché pour sync mobile selects');
+		} else {
+			// Retry si populateFilters pas encore définie
+			setTimeout(_patchPopulate, 300);
+		}
+	};
+	_patchPopulate();
+})();
+
+// Synchronisation initiale au chargement
+window.addEventListener('load', () => {
+	setTimeout(window.syncMobileSelects, 500);
+	// Initialiser les chevrons des sections fermées
+	document.querySelectorAll('.mobile-section-body:not(.open)').forEach(body => {
+		const header = body.previousElementSibling;
+		if (header) {
+			const chevron = header.querySelector('.mobile-section-chevron');
+			if (chevron) chevron.style.transform = 'rotate(-90deg)';
+		}
+	});
+});
 
 // Synchronise un input file mobile avec l'input file original (déclenche le même handler)
 window.syncFileInput = function(sourcInput, targetId) {
