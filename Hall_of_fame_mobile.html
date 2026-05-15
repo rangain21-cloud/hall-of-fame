@@ -3039,8 +3039,9 @@ window.addEventListener('pagehide', () => {
 							oninput="
 								const fG = document.getElementById('filterGenre');
 								fG.value = this.value;
-								handleGenreChange();
+								handleGenreChange(this.value);
 							">
+						<datalist id="genreList"></datalist>
 
 						<label for="mFilterArtist">Liste par compositeur</label>
 						<select id="mFilterArtist" autocomplete="off"
@@ -3939,10 +3940,15 @@ window.addEventListener('pagehide', () => {
 			});
 
 			// ── Genre → Type Musique (branché une seule fois, fonction globale) ──
-			function handleGenreChange() {
-				const filterGenre      = document.getElementById('filterGenre');
+			function handleGenreChange(genreValue) {
+				const filterGenre       = document.getElementById('filterGenre');
 				const filterTypeMusique = document.getElementById('filterTypeMusique');
-				const selectedGenre    = filterGenre.value;
+
+				// Accepte une valeur passée en paramètre (depuis mobile) ou lit le select desktop
+				const selectedGenre = (genreValue !== undefined) ? genreValue : filterGenre.value;
+
+				// Synchroniser le select desktop si appelé depuis mobile
+				if (genreValue !== undefined) filterGenre.value = selectedGenre;
 
 				// Règle 3 : Genre écrase Type Musique
 				filterTypeMusique.value = (selectedGenre && window._genreToTypeMusique && window._genreToTypeMusique[selectedGenre])
@@ -3954,7 +3960,7 @@ window.addEventListener('pagehide', () => {
 				const mG = document.getElementById('mFilterGenre');
 				if (mG) mG.value = selectedGenre;
 
-				// Règle 4 : liste compositeurs filtrée par Type Musique
+				// Règle 4 : liste compositeurs filtrée par Type Musique (sync mFilterArtist incluse)
 				populateComposerList();
 				// Règle 5 : support filtré par Genre + Compositeur + Musicien
 				updateFormatFilter();
@@ -4173,18 +4179,15 @@ window.addEventListener('pagehide', () => {
 				filterGenre.selectedIndex = 0;
 
 				// Datalist pour le champ mobile mFilterGenre (saisissable)
-				let genreList = document.getElementById('genreList');
-				if (!genreList) {
-					genreList = document.createElement('datalist');
-					genreList.id = 'genreList';
-					document.body.appendChild(genreList);
+				const genreList = document.getElementById('genreList');
+				if (genreList) {
+					genreList.innerHTML = '';
+					[...genres].sort().forEach(value => {
+						const option = document.createElement('option');
+						option.value = value;
+						genreList.appendChild(option);
+					});
 				}
-				genreList.innerHTML = '';
-				[...genres].sort().forEach(value => {
-					const option = document.createElement('option');
-					option.value = value;
-					genreList.appendChild(option);
-				});
 
 				// L'écouteur Genre→TypeMusique est branché une seule fois (voir après populateFilters)
 
