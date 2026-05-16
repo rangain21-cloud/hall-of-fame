@@ -905,7 +905,7 @@
 		}
 		@media (max-width: 768px) {
 			#colWidthToggleBtn {
-				display: flex;
+				display: none !important;
 			}
 		}
 		/* Overlay pour fermer le panneau en tapant ailleurs */
@@ -1785,8 +1785,9 @@ async function loadFromGoogleDrive(fileName) {
 		}
 
 	} catch (error) {
-		console.error('✗ Erreur Drive:', error);
-		showToast('✗ Erreur chargement', 'error');
+		console.error('✗ Erreur loadFromGoogleDrive:', fileName, error);
+		console.error('  status:', error?.status, ' message:', error?.result?.error?.message || error?.message);
+		showToast('✗ Erreur chargement: ' + (error?.result?.error?.message || error?.message || error), 'error');
 		return null;
 	} finally {
 		document.getElementById('syncSpinner')?.classList.remove('active');
@@ -3146,6 +3147,9 @@ window.addEventListener('pagehide', () => {
 						<button onclick="openVisualizationModal(); toggleSidebar();"
 							style="background:#334a91; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
 							📊 Statistiques</button>
+						<button onclick="toggleColWidthPanel(); toggleSidebar();"
+							style="background:#476bb6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							⇔ Largeur des colonnes</button>
 						<button onclick="toggleDebugPanel(); toggleSidebar();"
 							style="background:#1a1a2e; color:#7eb8f7; border:2px solid #476bb6; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
 							🐛 Console debug</button>
@@ -5025,14 +5029,15 @@ window.addEventListener('pagehide', () => {
 			// Logique de calcul du Nom Complet en temps réel
 			document.getElementById('aPrenom').addEventListener('input', updateNomComplet);
 			document.getElementById('aNom').addEventListener('input', updateNomComplet);
-			document.getElementById('aInstrument').addEventListener('input', updateNomComplet);
+			document.getElementById('aNationalite').addEventListener('input', updateNomComplet);
 
 			function updateNomComplet() {
-				const prenom = document.getElementById('aPrenom').value;
-				const nom = document.getElementById('aNom').value;
-				const instrument = document.getElementById('aInstrument').value;
-				const nomCompletCalculated = `${prenom} ${nom} - ${instrument}`;
-				document.getElementById('aNomComplet').value = nomCompletCalculated;
+				const prenom      = document.getElementById('aPrenom').value.trim();
+				const nom         = document.getElementById('aNom').value.trim();
+				const nationalite = document.getElementById('aNationalite').value.trim();
+				// Format : Prénom Nom - Nationalité
+				const parts = [prenom, nom].filter(Boolean).join(' ');
+				document.getElementById('aNomComplet').value = parts + (nationalite ? ' - ' + nationalite : '');
 			}
 
 
@@ -5882,9 +5887,30 @@ window.loadAllFromDrive = async function() {
 		alert('Veuillez d\'abord vous connecter à Google Drive');
 		return;
 	}
-	
+
 	try {
 		console.log('⬇️ Début chargement Drive...');
+		console.log('  driveConnected=', driveConnected, ' gapiInited=', gapiInited, ' gisInited=', gisInited);
+		console.log('  gapi.client disponible:', typeof gapi !== 'undefined' && !!gapi.client);
+		console.log('  Token actuel:', gapi?.client?.getToken ? JSON.stringify(gapi.client.getToken()) : 'N/A');
+
+		// Vérifier/renouveler le token avant tout appel Drive
+		const token = gapi.client.getToken ? gapi.client.getToken() : null;
+		if (!token || !token.access_token) {
+			console.warn('⚠️ Token absent — tentative de reconnexion...');
+			showToast('⚠️ Session expirée, reconnexion...', 'warning');
+			await new Promise((resolve, reject) => {
+				try {
+					window._tokenClient.requestAccessToken({ prompt: '' });
+					// Le callback tokenClient.callback mettra driveConnected=true
+					const check = setInterval(() => {
+						const t = gapi.client.getToken ? gapi.client.getToken() : null;
+						if (t && t.access_token) { clearInterval(check); resolve(); }
+					}, 300);
+					setTimeout(() => { clearInterval(check); reject(new Error('Token timeout')); }, 15000);
+				} catch(e) { reject(e); }
+			});
+		}
 
 		// ── Artistes EN PREMIER ──
 		const artistContent = await loadFromGoogleDrive('Artistes.csv');
