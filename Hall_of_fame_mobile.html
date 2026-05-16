@@ -4265,7 +4265,7 @@ window.addEventListener('pagehide', () => {
 					formatOptions.appendChild(option);
 				});
 
-				populateComposerList();
+				window.populateComposerList();
 			}
 
 			window.populateComposerList = function() {
@@ -5947,18 +5947,29 @@ window.loadAllFromDrive = async function() {
 					el.innerHTML = isSelect ? '<option value="">' + lbl + '</option>' : '';
 					vals.forEach(v => { const o = document.createElement('option'); o.value = v; if (isSelect) o.textContent = v; el.appendChild(o); });
 				};
+
+				// Construire la map Genre → Type Musique (Règle 2)
+				window._genreToTypeMusique = {};
+				rows.forEach(function(r) {
+					if (r['Genre musical'] && r['Type Musique'] && !window._genreToTypeMusique[r['Genre musical']]) {
+						window._genreToTypeMusique[r['Genre musical']] = r['Type Musique'];
+					}
+				});
+				console.log('directRender: _genreToTypeMusique peuplée, ' + Object.keys(window._genreToTypeMusique).length + ' genres');
+
 				fill('typeMusiqueList', uq(rows.map(r => r['Type Musique'])),   false);
 				fill('filterGenre',     uq(rows.map(r => r['Genre musical'])),   true,  '--- Tous les genres ---');
-				fill('genreList',       uq(rows.map(r => r['Genre musical'])),   false); // datalist mobile
+				fill('genreList',       uq(rows.map(r => r['Genre musical'])),   false);
 				fill('filterFormat',    uq(rows.flatMap(r => (r.Format||'').split(',').map(f=>f.trim()))), true, '--- Tous les supports ---');
 				fill('etiquetteList',   uq(rows.map(r => r.Etiquette)),          false);
 				fill('anneeList',       uq(rows.map(r => r['Annee de sortie'])), false);
-				fill('filterArtist',    uq(rows.map(r => r.Compositeur)),        true,  '--- Tous les compositeurs ---');
 
-				// Sync select mobile compositeur (tous, sans filtre Type Musique au départ)
-				const mArtist = document.getElementById('mFilterArtist');
-				const dArtist = document.getElementById('filterArtist');
-				if (mArtist && dArtist) { mArtist.innerHTML = dArtist.innerHTML; mArtist.value = ''; }
+				// Règle 1 : compositeurs filtrés par Type Musique (vide = tous)
+				if (typeof window.populateComposerList === 'function') {
+					window.populateComposerList();
+				} else {
+					fill('filterArtist', uq(rows.map(r => r.Compositeur)), true, '--- Tous les compositeurs ---');
+				}
 
 				// Sync select mobile support
 				const mFormat = document.getElementById('mFilterFormat');
