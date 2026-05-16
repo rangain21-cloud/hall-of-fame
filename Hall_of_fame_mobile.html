@@ -3149,6 +3149,9 @@ window.addEventListener('pagehide', () => {
 						<button onclick="toggleDebugPanel(); toggleSidebar();"
 							style="background:#1a1a2e; color:#7eb8f7; border:2px solid #476bb6; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
 							🐛 Console debug</button>
+						<button onclick="testDrive(); toggleSidebar();"
+							style="background:#b71c1c; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; padding:0.75rem; min-height:48px;">
+							🔍 Test Drive</button>
 					</div>
 				</div>
 
@@ -5793,10 +5796,6 @@ window.addEventListener('pagehide', () => {
 	</div>
 </div>
 
-<!-- À placer juste avant </body> -->
-<button onclick="testDrive()" style="position:fixed;bottom:80px;right:10px;z-index:9999;padding:15px;background:red;color:white;font-weight:bold;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-	🔍 TEST DRIVE
-</button>
 
 <script>
 function testDrive() {
