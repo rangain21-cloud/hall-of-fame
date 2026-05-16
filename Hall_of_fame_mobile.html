@@ -4273,18 +4273,19 @@ window.addEventListener('pagehide', () => {
 				const filterTypeMusique = document.getElementById('filterTypeMusique');
 				if (!filterArtist || !filterTypeMusique) return;
 
-				// Source de données : window.data en priorité, sinon variable locale data
 				const src = (window.data && window.data.length > 0) ? window.data
 				          : (typeof data !== 'undefined' && data && data.length > 0) ? data : [];
 
-				const selectedTypeMusique = filterTypeMusique.value.trim();
+				const selectedTypeMusique = filterTypeMusique.value.trim().toLowerCase();
 				const prevValue = filterArtist.value;
 
-				// Règle 1 : filtrer par Type Musique (égalité stricte), tous si vide
+				// Règle 1 : filtrer par Type Musique (includes, comme applyFilters)
+				// Si vide → tous les compositeurs
 				const compositeurs = new Set();
 				src.forEach(function(row) {
 					if (row.Compositeur && row.Compositeur.trim()) {
-						if (!selectedTypeMusique || row['Type Musique'] === selectedTypeMusique) {
+						const rowType = (row['Type Musique'] || '').toLowerCase();
+						if (!selectedTypeMusique || rowType.includes(selectedTypeMusique)) {
 							compositeurs.add(row.Compositeur.trim());
 						}
 					}
@@ -4301,7 +4302,6 @@ window.addEventListener('pagehide', () => {
 					filterArtist.appendChild(option);
 				});
 
-				// Restaurer sélection si encore valide
 				filterArtist.value = (prevValue && compositeurs.has(prevValue)) ? prevValue : '';
 
 				// Sync select mobile
