@@ -5853,8 +5853,40 @@ window.populateArtistList = function() {
 			<button onclick="deleteArtist('${initId}')" style="padding: 0.25rem 0.5rem;">🗑️</button>
 		`;
 	});
-	
-	window.deleteArtist = function(initialArtiste) {
+
+	console.log('✓ Liste des artistes affichée:', sortedArtists.length, 'artistes triés par Nom puis Prénom');
+};
+
+// Exposer editArtist globalement (défini dans le try/catch)
+window.editArtist = function(initialArtiste) {
+	const artist = artistData.find(a => a.Initialartiste === initialArtiste);
+	if (!artist) { showToast('Artiste introuvable : ' + initialArtiste, 'error'); return; }
+
+	document.getElementById('aType').value = artist.ACI;
+	document.getElementById('aMnémo').value = artist.Initialartiste || '';
+	document.getElementById('aMnémo').readOnly = true;
+	document.getElementById('aNomComplet').value = artist['Nom Complet'] || '';
+	document.getElementById('aAnneeNaissance').value = artist['Année naissance'] || '';
+	document.getElementById('aAnneeDeces').value = artist['Année décès'] || '';
+	document.getElementById('aPrenom').value = artist.Prénom || '';
+	document.getElementById('aNom').value = artist.Nom || '';
+	document.getElementById('aNationalite').value = artist.Nationalité || '';
+	document.getElementById('aInstrument').value = artist.Instrument || '';
+	document.getElementById('aRemarque').value = artist.Remarque || '';
+
+	if (artist['Type Artiste'] === 'Interprète') {
+		document.getElementById('aInterpreteRadio').checked = true;
+	} else {
+		document.getElementById('aCompositeurRadio').checked = true;
+	}
+
+	document.getElementById('aTypeMusique').value = artist['Type Musique'] || '';
+	document.getElementById('aGenreMusical').value = artist['Genre Musical'] || '';
+
+	document.getElementById('artistModal').style.display = 'flex';
+};
+
+window.deleteArtist = function(initialArtiste) {
 	const idx = artistData.findIndex(a => a.Initialartiste === initialArtiste);
 	if (idx === -1) { showToast('Artiste introuvable', 'error'); return; }
 	const artist = artistData[idx];
