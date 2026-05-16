@@ -914,6 +914,10 @@
 				background: transparent;
 				gap: 0.75rem;
 			}
+			/* Éléments réservés au mode mobile : cachés sur desktop */
+			.burger-mobile-only {
+				display: none !important;
+			}
 		}
 
 		/* Masquer TEST DRIVE et bouton colWidth flottants sur mobile */
@@ -922,6 +926,10 @@
 				display: none !important;
 			}
 			.fixed-test-drive-btn {
+				display: none !important;
+			}
+			/* Éléments déplacés dans le menu Burger sur mobile */
+			.topbar-hide-mobile {
 				display: none !important;
 			}
 		}
@@ -2827,12 +2835,12 @@ window.addEventListener('pagehide', () => {
 		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
 			<h2 style="margin:0; color:#334a91; font-size:1.2rem; white-space:nowrap;">🎵 Hall of Fame 📱</h2>
 		</div>
-		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+		<div class="topbar-hide-mobile" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
 			<label for="csvFileInput" class="highlight-btn">📁 Fichier source</label>
 			<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="csvFileName" class="file-info"></span>
 		</div>
-		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+		<div class="topbar-hide-mobile" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
 			<label for="artistCsvFileInput" class="highlight-btn">👤 Fichier artistes</label>
 			<input type="file" id="artistCsvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="artistCsvFileName" class="file-info"></span>
@@ -2846,7 +2854,7 @@ window.addEventListener('pagehide', () => {
 			<button onclick="saveAllToDrive()" style="min-width:auto; padding:0.5rem 0.75rem; background:#1976d2; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Sauvegarder sur Drive">💾 Drive</button>
 			<div id="syncSpinnerTopbar" class="sync-spinner"></div>
 			<button id="showArtistListBtn" class="highlight-btn">📋 Artistes</button>
-			<button id="showVisualizationBtn" class="highlight-btn" onclick="openVisualizationModal()">📊 Stats</button>
+			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()">📊 Stats</button>
 		</div>
 	</div>
 	
@@ -2983,6 +2991,15 @@ window.addEventListener('pagehide', () => {
 					📂 Fichiers CSV <span class="burger-arrow">▼</span>
 				</button>
 				<div class="burger-section-body" style="display:none;">
+					<!-- Chargement fichiers (visible seulement sur mobile) -->
+					<div class="burger-mobile-only">
+						<label for="csvFileInput" class="highlight-btn" style="display:block; text-align:center; cursor:pointer;">📁 Fichier source</label>
+						<span id="csvFileNameSidebar" class="file-info" style="font-size:0.8rem; color:#476bb6;"></span>
+					</div>
+					<div class="burger-mobile-only">
+						<label for="artistCsvFileInput" class="highlight-btn" style="display:block; text-align:center; cursor:pointer;">👤 Fichier artistes</label>
+						<span id="artistCsvFileNameSidebar" class="file-info" style="font-size:0.8rem; color:#476bb6;"></span>
+					</div>
 					<button onclick="downloadSourceCSV()">💾 Sauver fichier source</button>
 					<button onclick="downloadArtistCSV()">💾 Sauver fichier artistes</button>
 				</div>
@@ -3007,6 +3024,7 @@ window.addEventListener('pagehide', () => {
 					🛠 Outils <span class="burger-arrow">▼</span>
 				</button>
 				<div class="burger-section-body" style="display:none;">
+					<button onclick="openVisualizationModal()" class="burger-mobile-only">📊 Stats</button>
 					<button onclick="testDrive()" style="background:#e53935; color:white; border:none; border-radius:8px; font-weight:bold; width:100%;">🔍 TEST DRIVE</button>
 					<button onclick="toggleColWidthPanel()" style="width:100%;">⇔ Largeur des colonnes</button>
 				</div>
@@ -5829,14 +5847,26 @@ window.populateArtistList = function() {
 		
 		// Actions
 		const actionsCell = row.insertCell();
+		const initId = (artist.Initialartiste || '').replace(/'/g, "\\'");
 		actionsCell.innerHTML = `
-			<button onclick="editArtist(${index})" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;">✏️</button>
-			<button onclick="deleteArtist(${index})" style="padding: 0.25rem 0.5rem;">🗑️</button>
+			<button onclick="editArtist('${initId}')" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;">✏️</button>
+			<button onclick="deleteArtist('${initId}')" style="padding: 0.25rem 0.5rem;">🗑️</button>
 		`;
 	});
 	
-	console.log('✓ Liste des artistes affichée:', sortedArtists.length, 'artistes triés par Nom puis Prénom');
+	window.deleteArtist = function(initialArtiste) {
+	const idx = artistData.findIndex(a => a.Initialartiste === initialArtiste);
+	if (idx === -1) { showToast('Artiste introuvable', 'error'); return; }
+	const artist = artistData[idx];
+	const nom = artist['Nom Complet'] || artist.Initialartiste || initialArtiste;
+	if (!confirm('Supprimer l\'artiste « ' + nom + ' » ?')) return;
+	artistData.splice(idx, 1);
+	window.populateArtistList();
+	markUnsavedArtists();
+	showToast('✓ Artiste supprimé : ' + nom, 'success');
 };
+
+
 
 // Ajouter l'événement pour synchroniser Type de musique avec Genre musical
 window.addEventListener('load', () => {
@@ -6076,7 +6106,24 @@ window.addEventListener('load', function() {
 	};
 })();
 
-console.log('✓ Pavés burger menu initialisés');
+// ===================================================================
+// SYNCHRONISATION NOM FICHIER topbar ↔ sidebar
+// ===================================================================
+(function() {
+	function syncFileName(sourceId, sidebarId) {
+		const source = document.getElementById(sourceId);
+		const target = document.getElementById(sidebarId);
+		if (!source || !target) return;
+		const observer = new MutationObserver(() => { target.textContent = source.textContent; });
+		observer.observe(source, { childList: true, characterData: true, subtree: true });
+	}
+	window.addEventListener('load', function() {
+		syncFileName('csvFileName', 'csvFileNameSidebar');
+		syncFileName('artistCsvFileName', 'artistCsvFileNameSidebar');
+	});
+})();
+
+
 
 </script>
 </body>
