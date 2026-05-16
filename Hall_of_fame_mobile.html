@@ -3428,29 +3428,35 @@ window.addEventListener('pagehide', () => {
 		// dans un contexte où elles ne sont pas disponibles (ex: about:srcdoc).
 
 
-		function openModal(id) {
-			document.getElementById(id).style.display = 'flex'; // Utiliser flex pour la modale artiste
+		window.openModal = function openModal(id) {
+			const el = document.getElementById(id);
+			if (el) el.style.display = 'flex';
 		}
+		function openModal(id) { window.openModal(id); }
 
-		function closeModal(id) {
-			document.getElementById(id).style.display = 'none';
+		window.closeModal = function closeModal(id) {
+			const el = document.getElementById(id);
+			if (el) el.style.display = 'none';
 		}
+		function closeModal(id) { window.closeModal(id); }
 
 		// --- Visualisation (Chart.js autonome) ---
 
 		let currentDrilldown = []; // [Type Musique, Genre musical]
 
 		function openVisualizationModal() {
-			if (!data || data.length === 0) {
-				alert("Veuillez d'abord sélectionner et charger le fichier source (CSV) pour la visualisation.");
+			const src = window.data || (typeof data !== 'undefined' ? data : []);
+			if (!src || src.length === 0) {
+				alert("Veuillez d'abord charger le fichier source (CSV).");
 				return;
 			}
-			openModal('visualizationModal');
+			window.openModal('visualizationModal');
 			document.getElementById('chartTitle').textContent = 'Répartition par Type Musique';
 			currentDrilldown = [];
-			document.querySelector('#visualizationModal .chart-header button').disabled = true; // Désactiver le bouton Retour au niveau racine
+			document.querySelector('#visualizationModal .chart-header button').disabled = true;
 			drawChart('Type Musique');
 		}
+		window.openVisualizationModal = openVisualizationModal;
 
 		// Palette pastel identique à l'ancienne configuration Google Charts
 		const PIE_COLORS = [
@@ -4904,14 +4910,16 @@ window.addEventListener('pagehide', () => {
 				if (!tbody) { console.error("tbody #dataTable introuvable"); return; }
 				tbody.innerHTML = '';
 
-				// Source autoritaire : window.filteredData (assigné par applyFilters après filtrage)
-				const _filteredData = window.filteredData || filteredData || [];
-				filteredData = _filteredData; // sync local
+				// window.filteredData est la source autoritaire (assignée par sortTable après applyFilters)
+				// On vérifie Array.isArray pour accepter les tableaux vides (0 résultat = filtre actif)
+				const _filteredData = Array.isArray(window.filteredData) ? window.filteredData
+				                    : Array.isArray(filteredData)        ? filteredData : [];
+				filteredData        = _filteredData;
 
-				const _currentPage = currentPage || window.currentPage || 1;
-				const _ITEMS       = ITEMS_PER_PAGE || window.ITEMS_PER_PAGE || 100;
-				const start    = (_currentPage - 1) * _ITEMS;
-				const pageData = _filteredData.slice(start, start + _ITEMS);
+				const _currentPage = currentPage || 1;
+				const _ITEMS       = ITEMS_PER_PAGE || 100;
+				const start        = (_currentPage - 1) * _ITEMS;
+				const pageData     = _filteredData.slice(start, start + _ITEMS);
 
 				// Mise à jour de l'indicateur de tri dans l'entête
 				document.querySelectorAll('#dataTable th').forEach(th => {
@@ -5376,7 +5384,6 @@ window.addEventListener('pagehide', () => {
 			function toggleSidebar() {
 				const sidebar = document.getElementById('sidebar');
 				const overlay = document.getElementById('sidebarOverlay');
-				
 				if (sidebar.classList.contains('open')) {
 					sidebar.classList.remove('open');
 					overlay.classList.remove('active');
@@ -5385,6 +5392,7 @@ window.addEventListener('pagehide', () => {
 					overlay.classList.add('active');
 				}
 			}
+			window.toggleSidebar = toggleSidebar;
 
 			// ===================================================================
 			// MODALE DÉPLAÇABLE ET REDIMENSIONNABLE
@@ -5457,15 +5465,12 @@ window.addEventListener('pagehide', () => {
 					}
 				}
 
-				// Réinitialiser la position lors de l'ouverture
-				const originalOpenModal = window.openModal || function() {};
+				// Réinitialiser la position lors de l'ouverture via un observateur sur display
+				const _origOpen = window.openModal;
 				window.openModal = function(id) {
-					if (typeof originalOpenModal === 'function') {
-						originalOpenModal(id);
-					}
+					_origOpen(id);
 					if (id === modalId) {
-						xOffset = 0;
-						yOffset = 0;
+						xOffset = 0; yOffset = 0;
 						modal.style.left = '50%';
 						modal.style.transform = 'translateX(-50%)';
 					}
