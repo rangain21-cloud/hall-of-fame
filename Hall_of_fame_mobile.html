@@ -6557,6 +6557,84 @@ window.syncFileInput = function(sourcInput, targetId) {
 	console.log('✓ Garde touche Retour Android initialisé');
 })();
 </script>
-</body>
 
+<!-- ═══════════════════════════════════════════════════════════
+     PANNEAU DEBUG MOBILE — bouton 🐛 en bas à droite
+     ══════════════════════════════════════════════════════════ -->
+<div id="debugPanel" style="
+	display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
+	background:#1a1a2e; color:#e0e0ff; font-family:monospace; font-size:11px;
+	max-height:45vh; flex-direction:column; border-top:3px solid #476bb6;">
+	<div style="display:flex; align-items:center; justify-content:space-between;
+		padding:6px 10px; background:#0f0f1a; flex-shrink:0;">
+		<span style="font-weight:bold; color:#7eb8f7;">🐛 Console debug</span>
+		<div style="display:flex; gap:8px;">
+			<button onclick="document.getElementById('debugLog').innerHTML=''" style="
+				background:#333; color:#fff; border:none; border-radius:4px;
+				padding:3px 8px; cursor:pointer; font-size:11px;">🗑 Vider</button>
+			<button onclick="toggleDebugPanel()" style="
+				background:#476bb6; color:#fff; border:none; border-radius:4px;
+				padding:3px 8px; cursor:pointer; font-size:11px;">✕ Fermer</button>
+		</div>
+	</div>
+	<div id="debugLog" style="
+		overflow-y:auto; flex:1; padding:6px 10px;
+		word-break:break-all; white-space:pre-wrap;"></div>
+</div>
+
+<button id="debugToggleBtn" onclick="toggleDebugPanel()" style="
+	position:fixed; bottom:16px; right:16px; z-index:99998;
+	background:#1a1a2e; color:#7eb8f7; border:2px solid #476bb6;
+	border-radius:50%; width:44px; height:44px; font-size:18px;
+	cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);
+	line-height:44px; text-align:center; padding:0;">🐛</button>
+
+<script>
+(function() {
+	function toggleDebugPanel() {
+		const panel = document.getElementById('debugPanel');
+		const isOpen = panel.style.display === 'flex';
+		panel.style.display = isOpen ? 'none' : 'flex';
+	}
+	window.toggleDebugPanel = toggleDebugPanel;
+
+	const logEl = () => document.getElementById('debugLog');
+
+	function addLog(type, args) {
+		const el = logEl();
+		if (!el) return;
+		const colors = { log:'#c8f7c5', error:'#ff6b6b', warn:'#ffd93d', info:'#7eb8f7' };
+		const icons  = { log:'▶', error:'✖', warn:'⚠', info:'ℹ' };
+		const ts = new Date().toTimeString().slice(0,8);
+		const msg = Array.from(args).map(a => {
+			try { return (typeof a === 'object') ? JSON.stringify(a, null, 1) : String(a); }
+			catch(e) { return String(a); }
+		}).join(' ');
+		const line = document.createElement('div');
+		line.style.cssText = `color:${colors[type]||'#fff'}; border-bottom:1px solid #222; padding:2px 0;`;
+		line.textContent = `${ts} ${icons[type]||'▶'} ${msg}`;
+		el.appendChild(line);
+		el.scrollTop = el.scrollHeight;
+	}
+
+	// Intercepter console.*
+	['log','error','warn','info'].forEach(type => {
+		const orig = console[type].bind(console);
+		console[type] = function(...args) { orig(...args); addLog(type, args); };
+	});
+
+	// Erreurs JS non catchées
+	window.addEventListener('error', function(e) {
+		addLog('error', [`[JS] ${e.message} @ ${e.filename?.split('/').pop()}:${e.lineno}`]);
+	});
+
+	// Rejets Promise non catchées
+	window.addEventListener('unhandledrejection', function(e) {
+		addLog('error', [`[Promise] ${e.reason}`]);
+	});
+
+	console.log('🐛 Console debug mobile prête');
+})();
+</script>
+</body>
 </html>
