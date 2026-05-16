@@ -1621,12 +1621,14 @@
 	}
 
 	function disconnectFromDrive() {
-		if (accessToken) {
-			google.accounts.oauth2.revoke(accessToken);
-			accessToken = null;
-			driveConnected = false;
-			updateDriveStatus(false);
-		}
+		if (!accessToken) return;
+		// Popup de confirmation avant déconnexion
+		if (!confirm('⚠️ Confirmer la déconnexion de Google Drive ?\n\nVous devrez vous reconnecter pour accéder à vos fichiers.')) return;
+		google.accounts.oauth2.revoke(accessToken);
+		accessToken = null;
+		driveConnected = false;
+		updateDriveStatus(false);
+		showToast('✓ Déconnecté de Google Drive', 'info');
 	}
 
 	function updateDriveStatus(connected) {
@@ -6152,6 +6154,57 @@ window.addEventListener('load', function() {
 	window.addEventListener('load', function() {
 		syncFileName('csvFileName', 'csvFileNameSidebar');
 		syncFileName('artistCsvFileName', 'artistCsvFileNameSidebar');
+	});
+})();
+
+// ===================================================================
+// CONFIRMATION NAVIGATION ARRIÈRE (touche Retour Android / Alt+← PC)
+// ===================================================================
+(function() {
+	// Injecter une entrée dans l'historique pour intercepter le "Retour"
+	history.pushState({ hofApp: true }, '');
+
+	// Intercepter popstate (bouton Retour Android + Alt+← via historique)
+	window.addEventListener('popstate', function(e) {
+		// Si une modale est ouverte, la fermer plutôt que quitter
+		const modals = ['entryModal', 'artistListModal', 'visualizationModal', 'artistModal'];
+		for (const id of modals) {
+			const el = document.getElementById(id);
+			if (el && el.style.display !== 'none' && el.style.display !== '') {
+				el.style.display = 'none';
+				history.pushState({ hofApp: true }, '');
+				return;
+			}
+		}
+		// Si la sidebar est ouverte, la fermer
+		const sidebar = document.getElementById('sidebar');
+		if (sidebar && sidebar.classList.contains('open')) {
+			if (typeof toggleSidebar === 'function') toggleSidebar();
+			history.pushState({ hofApp: true }, '');
+			return;
+		}
+		// Sinon : demander confirmation avant de quitter
+		const msg = _anyUnsaved()
+			? '⚠️ Vous avez des modifications non sauvegardées.\n\nQuitter l\'application quand même ?'
+			: 'Quitter Hall of Fame ?';
+		if (confirm(msg)) {
+			history.back();
+		} else {
+			history.pushState({ hofApp: true }, '');
+		}
+	});
+
+	// Intercepter Alt+← sur PC
+	document.addEventListener('keydown', function(e) {
+		if (e.altKey && e.key === 'ArrowLeft') {
+			e.preventDefault();
+			const msg = _anyUnsaved()
+				? '⚠️ Vous avez des modifications non sauvegardées.\n\nQuitter l\'application quand même ?'
+				: 'Quitter Hall of Fame ?';
+			if (confirm(msg)) {
+				history.back();
+			}
+		}
 	});
 })();
 
