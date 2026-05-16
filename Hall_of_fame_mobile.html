@@ -2975,8 +2975,7 @@ window.addEventListener('pagehide', () => {
 			<div class="sidebar-desktop-only">
 				<div>
 					<label for="filterTypeMusique">Type de musique</label>
-					<input list="typeMusiqueList" id="filterTypeMusique" autocomplete="off">
-					<datalist id="typeMusiqueList"></datalist>
+					<select id="filterTypeMusique" autocomplete="off"></select>
 				</div>
 				<div>
 					<label for="filterGenre">Liste par genre musical</label>
@@ -3032,8 +3031,8 @@ window.addEventListener('pagehide', () => {
 					</div>
 					<div class="mobile-section-body" id="mobileFiltersBody">
 						<label for="mFilterTypeMusique">Type de musique</label>
-						<input list="typeMusiqueList" id="mFilterTypeMusique" autocomplete="off"
-							oninput="document.getElementById('filterTypeMusique').value=this.value; window.populateComposerList(); if(typeof updateFormatFilter==='function') updateFormatFilter(); if(typeof applyFilters==='function') applyFilters();">
+						<select id="mFilterTypeMusique" autocomplete="off"
+							onchange="document.getElementById('filterTypeMusique').value=this.value; window.populateComposerList(); if(typeof updateFormatFilter==='function') updateFormatFilter(); if(typeof applyFilters==='function') applyFilters();"></select>
 
 						<label for="mFilterGenre">Liste par genre musical</label>
 						<input list="genreList" id="mFilterGenre" autocomplete="off"
@@ -3907,7 +3906,7 @@ window.addEventListener('pagehide', () => {
 			});
 
 			// Type de musique : recalcul compositeurs + applyFilters
-			document.getElementById('filterTypeMusique').addEventListener('input', function() {
+			document.getElementById('filterTypeMusique').addEventListener('change', function() {
 				window.populateComposerList();
 				updateFormatFilter();
 				applyFilters();
@@ -4173,14 +4172,24 @@ window.addEventListener('pagehide', () => {
 				// Exposer la map globalement pour handleGenreChange (défini hors de populateFilters)
 				window._genreToTypeMusique = genreToFirstTypeMusique;
 
-				// Type de musique (datalist pour input)
-				const typeMusiqueList = document.getElementById('typeMusiqueList');
-				typeMusiqueList.innerHTML = '';
+				// Type de musique (select — combo box)
+				const filterTypeMusique = document.getElementById('filterTypeMusique');
+				const mFilterTypeMusique = document.getElementById('mFilterTypeMusique');
+				const prevTypeMusique = filterTypeMusique.value;
+				filterTypeMusique.innerHTML = '<option value="">--- Tous les types ---</option>';
 				[...typeMusiques].sort().forEach(value => {
 					const option = document.createElement('option');
 					option.value = value;
-					typeMusiqueList.appendChild(option);
+					option.textContent = value;
+					filterTypeMusique.appendChild(option);
 				});
+				// Restaurer sélection si toujours valide
+				if (prevTypeMusique && typeMusiques.has(prevTypeMusique)) filterTypeMusique.value = prevTypeMusique;
+				// Sync select mobile
+				if (mFilterTypeMusique) {
+					mFilterTypeMusique.innerHTML = filterTypeMusique.innerHTML;
+					mFilterTypeMusique.value = filterTypeMusique.value;
+				}
 
 				// Liste par genre musical (select desktop)
 				filterGenre.innerHTML = '<option value="">--- Tous les genres ---</option>';
@@ -4280,16 +4289,8 @@ window.addEventListener('pagehide', () => {
 				const filterTypeMusique = document.getElementById('filterTypeMusique');
 				if (!filterArtist || !filterTypeMusique) return;
 
-				// Même logique de résolution que applyFilters :
-				// data local en priorité, sinon window.data
-				let src = (typeof data !== 'undefined' && data && data.length > 0) ? data : [];
-				if (src.length === 0 && window.data && window.data.length > 0) src = window.data;
-				// Synchroniser dans les deux sens pour les appels suivants
-				if (src.length > 0) {
-					try { if (!data || data.length === 0) data = src; } catch(e) {}
-					window.data = src;
-				}
-
+				// Source unique : window.data (toujours syncé après chaque chargement)
+				const src = window.data || [];
 				const selectedTypeMusique = filterTypeMusique.value.trim().toLowerCase();
 				const prevValue = filterArtist.value;
 
@@ -5119,21 +5120,26 @@ window.addEventListener('pagehide', () => {
 			}
 
 
-			function editArtist(initialArtiste) {
-				const artist = artistData.find(a => a.Initialartiste === initialArtiste);
-				if (!artist) return;
+			window.editArtist = function(initialArtiste) {
+				const src = window.artistData || [];
+				const artist = src.find(a => a.Initialartiste === initialArtiste);
+				if (!artist) { 
+					console.error('editArtist: artiste introuvable:', initialArtiste, '— artistData.length=', src.length);
+					alert('Artiste introuvable : ' + initialArtiste);
+					return; 
+				}
 
-				document.getElementById('aType').value = artist.ACI; // Le champ ACI est caché, on le charge
-				document.getElementById('aMnémo').value = artist.Initialartiste || '';
-				document.getElementById('aMnémo').readOnly = true; // Le Mnémo est en lecture seule en mode modification
-				document.getElementById('aNomComplet').value = artist['Nom Complet'] || '';
+				document.getElementById('aType').value        = artist.ACI || '';
+				document.getElementById('aMnémo').value       = artist.Initialartiste || '';
+				document.getElementById('aMnémo').readOnly    = true;
+				document.getElementById('aNomComplet').value  = artist['Nom Complet'] || '';
 				document.getElementById('aAnneeNaissance').value = artist['Année naissance'] || '';
-				document.getElementById('aAnneeDeces').value = artist['Année décès'] || '';
-				document.getElementById('aPrenom').value = artist.Prénom || '';
-				document.getElementById('aNom').value = artist.Nom || '';
+				document.getElementById('aAnneeDeces').value  = artist['Année décès'] || '';
+				document.getElementById('aPrenom').value      = artist.Prénom || '';
+				document.getElementById('aNom').value         = artist.Nom || '';
 				document.getElementById('aNationalite').value = artist.Nationalité || '';
-				document.getElementById('aInstrument').value = artist.Instrument || '';
-				document.getElementById('aRemarque').value = artist.Remarque || ''; // Ajout du chargement de la Remarque
+				document.getElementById('aInstrument').value  = artist.Instrument || '';
+				document.getElementById('aRemarque').value    = artist.Remarque || '';
 
 				if (artist['Type Artiste'] === 'Interprète') {
 					document.getElementById('aInterpreteRadio').checked = true;
@@ -5141,11 +5147,28 @@ window.addEventListener('pagehide', () => {
 					document.getElementById('aCompositeurRadio').checked = true;
 				}
 
-				document.getElementById('aTypeMusique').value = artist['Type Musique'] || '';
+				document.getElementById('aTypeMusique').value  = artist['Type Musique'] || '';
 				document.getElementById('aGenreMusical').value = artist['Genre Musical'] || '';
 
+				closeModal('artistListModal');
 				openModal('artistModal');
-			}
+			};
+
+			window.deleteArtist = function(initialArtiste) {
+				if (!confirm('Supprimer l\'artiste « ' + initialArtiste + ' » ?')) return;
+				const src = window.artistData || [];
+				const idx = src.findIndex(a => a.Initialartiste === initialArtiste);
+				if (idx === -1) { 
+					console.error('deleteArtist: introuvable:', initialArtiste);
+					alert('Artiste introuvable : ' + initialArtiste);
+					return; 
+				}
+				src.splice(idx, 1);
+				window.artistData = src;
+				try { artistData = src; } catch(e) {}
+				console.log('✓ Artiste supprimé:', initialArtiste, '— reste', src.length, 'artistes');
+				if (typeof window.populateArtistList === 'function') window.populateArtistList();
+			};
 
 			function convertToCSV(dataArray) {
 				if (dataArray.length === 0) return '';
@@ -5617,6 +5640,7 @@ window.addEventListener('pagehide', () => {
 									if (row.ACI === 'Interprète') row.ACI = '1';
 									return row;
 								});
+								window.artistData = artistData; // sync global
 								artistFileName = 'Artistes.csv';
 								
 								document.getElementById('artistCsvFileName').textContent = artistFileName;
@@ -5986,7 +6010,11 @@ window.loadAllFromDrive = async function() {
 				});
 				console.log('directRender: _genreToTypeMusique peuplée, ' + Object.keys(window._genreToTypeMusique).length + ' genres');
 
-				fill('typeMusiqueList', uq(rows.map(r => r['Type Musique'])),   false);
+				fill('filterTypeMusique', uq(rows.map(r => r['Type Musique'])), true, '--- Tous les types ---');
+				// Sync select mobile Type Musique
+				const mTMdr = document.getElementById('mFilterTypeMusique');
+				const dTMdr = document.getElementById('filterTypeMusique');
+				if (mTMdr && dTMdr) { mTMdr.innerHTML = dTMdr.innerHTML; mTMdr.value = ''; }
 				fill('filterGenre',     uq(rows.map(r => r['Genre musical'])),   true,  '--- Tous les genres ---');
 				fill('genreList',       uq(rows.map(r => r['Genre musical'])),   false);
 				fill('filterFormat',    uq(rows.flatMap(r => (r.Format||'').split(',').map(f=>f.trim()))), true, '--- Tous les supports ---');
@@ -6262,9 +6290,10 @@ window.populateArtistList = function() {
 		
 		// Actions
 		const actionsCell = row.insertCell();
+		const initId = (artist.Initialartiste || '').replace(/'/g, "\\'");
 		actionsCell.innerHTML = `
-			<button onclick="editArtist(${index})" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;">✏️</button>
-			<button onclick="deleteArtist(${index})" style="padding: 0.25rem 0.5rem;">🗑️</button>
+			<button onclick="window.editArtist('${initId}')" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;">✏️</button>
+			<button onclick="window.deleteArtist('${initId}')" style="padding: 0.25rem 0.5rem;">🗑️</button>
 		`;
 	});
 	
@@ -6527,6 +6556,13 @@ window.syncFiltersToMobile = function() {
  * À appeler après chaque populateFilters().
  */
 window.syncMobileSelects = function() {
+	// Type de musique
+	const srcTM = document.getElementById('filterTypeMusique');
+	const dstTM = document.getElementById('mFilterTypeMusique');
+	if (srcTM && dstTM) {
+		dstTM.innerHTML = srcTM.innerHTML;
+		dstTM.value = srcTM.value;
+	}
 	// Genre musical : mFilterGenre est un input, on sync juste la valeur
 	const srcGenre = document.getElementById('filterGenre');
 	const dstGenre = document.getElementById('mFilterGenre');
