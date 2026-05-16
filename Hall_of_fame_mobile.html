@@ -4276,18 +4276,23 @@ window.addEventListener('pagehide', () => {
 				const filterTypeMusique = document.getElementById('filterTypeMusique');
 				if (!filterArtist || !filterTypeMusique) return;
 
-				const src = (window.data && window.data.length > 0) ? window.data
-				          : (typeof data !== 'undefined' && data && data.length > 0) ? data : [];
+				// Même logique de résolution que applyFilters :
+				// data local en priorité, sinon window.data
+				let src = (typeof data !== 'undefined' && data && data.length > 0) ? data : [];
+				if (src.length === 0 && window.data && window.data.length > 0) src = window.data;
+				// Synchroniser dans les deux sens pour les appels suivants
+				if (src.length > 0) {
+					try { if (!data || data.length === 0) data = src; } catch(e) {}
+					window.data = src;
+				}
 
 				const selectedTypeMusique = filterTypeMusique.value.trim().toLowerCase();
 				const prevValue = filterArtist.value;
 
-				// Règle 1 : filtrer par Type Musique (includes, comme applyFilters)
-				// Si vide → tous les compositeurs
 				const compositeurs = new Set();
 				src.forEach(function(row) {
 					if (row.Compositeur && row.Compositeur.trim()) {
-						const rowType = (row['Type Musique'] || '').toLowerCase();
+						const rowType = (row['Type Musique'] || '').trim().toLowerCase();
 						if (!selectedTypeMusique || rowType.includes(selectedTypeMusique)) {
 							compositeurs.add(row.Compositeur.trim());
 						}
@@ -4307,7 +4312,6 @@ window.addEventListener('pagehide', () => {
 
 				filterArtist.value = (prevValue && compositeurs.has(prevValue)) ? prevValue : '';
 
-				// Sync select mobile
 				const mArtist = document.getElementById('mFilterArtist');
 				if (mArtist) {
 					mArtist.innerHTML = filterArtist.innerHTML;
