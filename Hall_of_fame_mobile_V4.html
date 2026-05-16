@@ -3948,23 +3948,23 @@ window.addEventListener('pagehide', () => {
 				});
 				filterGenre.selectedIndex = 0; // Forcer "Tous" sur Android
 
-				// Ajouter l'écouteur pour la logique Genre -> Type Musique
-				filterGenre.removeEventListener('change', handleGenreChange); // S'assurer qu'il n'y a qu'un seul écouteur
-				filterGenre.addEventListener('change', handleGenreChange);
-
-				function handleGenreChange() {
-					const selectedGenre = filterGenre.value;
-					// Logique: Lorsqu'une valeur est choisie dans le sélecteur Liste par genre musical, 
-					// la valeur correspondante de Type de musique est automatiquement attribuée au champ Type Musique.
-					if (selectedGenre && genreToFirstTypeMusique[selectedGenre]) {
-						filterTypeMusique.value = genreToFirstTypeMusique[selectedGenre];
-					} else {
-						filterTypeMusique.value = '';
-					}
-					// Après avoir mis à jour le Type Musique, on applique les filtres
-					populateComposerList();
-					applyFilters();
+				// Écouteur Genre → Type Musique (référence stable pour éviter les doublons)
+				if (!filterGenre._genreHandler) {
+					filterGenre._genreHandler = function() {
+						const selectedGenre = filterGenre.value;
+						// Mettre à jour Type de musique en concordance avec le genre sélectionné
+						if (selectedGenre && genreToFirstTypeMusique[selectedGenre]) {
+							filterTypeMusique.value = genreToFirstTypeMusique[selectedGenre];
+						} else {
+							filterTypeMusique.value = '';
+						}
+						populateComposerList();
+						applyFilters();
+					};
+					filterGenre.addEventListener('change', filterGenre._genreHandler);
 				}
+				// Alias pour compatibilité avec les appels existants à handleGenreChange
+				var handleGenreChange = filterGenre._genreHandler;
 
 				// Liste par musicien (datalist pour input)
 				const musicienList = document.getElementById('musicienList');
@@ -5902,32 +5902,7 @@ window.deleteArtist = function(initialArtiste) {
 
 
 
-// Ajouter l'événement pour synchroniser Type de musique avec Genre musical
-window.addEventListener('load', () => {
-	const genreSelect = document.getElementById('filterGenre');
-	const typeMusiqueInput = document.getElementById('filterTypeMusique');
-	
-	if (genreSelect && typeMusiqueInput) {
-		genreSelect.addEventListener('change', function() {
-			const selectedGenre = this.value;
-			
-			if (selectedGenre && data && data.length > 0) {
-				// Trouver le premier enregistrement avec ce genre musical
-				const record = data.find(row => row['Genre musical'] === selectedGenre);
-				
-				if (record && record['Type Musique']) {
-					typeMusiqueInput.value = record['Type Musique'];
-					console.log('✓ Type Musique auto-rempli:', record['Type Musique'], 'pour Genre:', selectedGenre);
-				}
-			} else {
-				// Si "-- Tous --" est sélectionné, vider le champ
-				typeMusiqueInput.value = '';
-			}
-		});
-		
-		console.log('✓ Événement Genre → Type Musique configuré');
-	}
-});
+// Listener Genre → Type Musique géré par handleGenreChange dans populateFilters()
 
 // ===================================================================
 // CONTRÔLE LARGEUR DES COLONNES (MOBILE) + POIGNÉES TACTILES (TABLEAU PRINCIPAL)
