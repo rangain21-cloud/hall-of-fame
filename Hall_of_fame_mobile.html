@@ -2975,7 +2975,8 @@ window.addEventListener('pagehide', () => {
 			<div class="sidebar-desktop-only">
 				<div>
 					<label for="filterTypeMusique">Type de musique</label>
-					<select id="filterTypeMusique" autocomplete="off"></select>
+					<input list="typeMusiqueList" id="filterTypeMusique" autocomplete="off">
+					<datalist id="typeMusiqueList"></datalist>
 				</div>
 				<div>
 					<label for="filterGenre">Liste par genre musical</label>
@@ -3031,8 +3032,8 @@ window.addEventListener('pagehide', () => {
 					</div>
 					<div class="mobile-section-body" id="mobileFiltersBody">
 						<label for="mFilterTypeMusique">Type de musique</label>
-						<select id="mFilterTypeMusique" autocomplete="off"
-							onchange="document.getElementById('filterTypeMusique').value=this.value; window.populateComposerList(); if(typeof updateFormatFilter==='function') updateFormatFilter(); if(typeof applyFilters==='function') applyFilters();"></select>
+						<input list="typeMusiqueList" id="mFilterTypeMusique" autocomplete="off"
+							oninput="document.getElementById('filterTypeMusique').value=this.value; window.populateComposerList(); if(typeof updateFormatFilter==='function') updateFormatFilter(); if(typeof applyFilters==='function') applyFilters();">
 
 						<label for="mFilterGenre">Liste par genre musical</label>
 						<input list="genreList" id="mFilterGenre" autocomplete="off"
@@ -3905,9 +3906,8 @@ window.addEventListener('pagehide', () => {
 				if (mF) mF.value = this.value;
 			});
 
-			// Type de musique : restreint Genre + Compositeur + applyFilters
-			document.getElementById('filterTypeMusique').addEventListener('change', function() {
-				populateGenreList();
+			// Type de musique : recalcul compositeurs + applyFilters
+			document.getElementById('filterTypeMusique').addEventListener('input', function() {
 				window.populateComposerList();
 				updateFormatFilter();
 				applyFilters();
@@ -4173,24 +4173,14 @@ window.addEventListener('pagehide', () => {
 				// Exposer la map globalement pour handleGenreChange (défini hors de populateFilters)
 				window._genreToTypeMusique = genreToFirstTypeMusique;
 
-				// Type de musique (select — combo box)
-				const filterTypeMusique = document.getElementById('filterTypeMusique');
-				const mFilterTypeMusique = document.getElementById('mFilterTypeMusique');
-				const prevTypeMusique = filterTypeMusique.value;
-				filterTypeMusique.innerHTML = '<option value="">--- Tous les types ---</option>';
+				// Type de musique (datalist pour input)
+				const typeMusiqueList = document.getElementById('typeMusiqueList');
+				typeMusiqueList.innerHTML = '';
 				[...typeMusiques].sort().forEach(value => {
 					const option = document.createElement('option');
 					option.value = value;
-					option.textContent = value;
-					filterTypeMusique.appendChild(option);
+					typeMusiqueList.appendChild(option);
 				});
-				// Restaurer sélection si toujours valide
-				if (prevTypeMusique && typeMusiques.has(prevTypeMusique)) filterTypeMusique.value = prevTypeMusique;
-				// Sync select mobile
-				if (mFilterTypeMusique) {
-					mFilterTypeMusique.innerHTML = filterTypeMusique.innerHTML;
-					mFilterTypeMusique.value = filterTypeMusique.value;
-				}
 
 				// Liste par genre musical (select desktop)
 				filterGenre.innerHTML = '<option value="">--- Tous les genres ---</option>';
@@ -4285,51 +4275,21 @@ window.addEventListener('pagehide', () => {
 				window.populateComposerList();
 			}
 
-			// ── populateGenreList : restreint filterGenre par Type Musique ──
-			window.populateGenreList = function() {
-				const fGenre = document.getElementById('filterGenre');
-				const fTM    = document.getElementById('filterTypeMusique');
-				const mGenre = document.getElementById('mFilterGenre');
-				const gList  = document.getElementById('genreList');
-				if (!fGenre || !fTM) return;
-
-				const src = window.data || [];
-				const selTM = fTM.value.trim().toLowerCase();
-				const prev  = fGenre.value;
-
-				const genres = new Set();
-				src.forEach(function(row) {
-					if (row['Genre musical'] && row['Genre musical'].trim()) {
-						const rt = (row['Type Musique'] || '').trim().toLowerCase();
-						if (!selTM || rt.includes(selTM)) genres.add(row['Genre musical'].trim());
-					}
-				});
-
-				fGenre.innerHTML = '<option value="">--- Tous les genres ---</option>';
-				[...genres].sort().forEach(function(v) {
-					const o = document.createElement('option'); o.value = v; o.textContent = v; fGenre.appendChild(o);
-				});
-				fGenre.value = (prev && genres.has(prev)) ? prev : '';
-
-				// Sync datalist mobile
-				if (gList) {
-					gList.innerHTML = '';
-					[...genres].sort().forEach(function(v) {
-						const o = document.createElement('option'); o.value = v; gList.appendChild(o);
-					});
-				}
-				if (mGenre) mGenre.value = fGenre.value;
-				console.log('populateGenreList → TM="' + selTM + '" → ' + genres.size + ' genres');
-			};
-			var populateGenreList = window.populateGenreList;
-
 			window.populateComposerList = function() {
 				const filterArtist      = document.getElementById('filterArtist');
 				const filterTypeMusique = document.getElementById('filterTypeMusique');
 				if (!filterArtist || !filterTypeMusique) return;
 
-				// Source unique : window.data (toujours syncé après chaque chargement)
-				const src = window.data || [];
+				// Même logique de résolution que applyFilters :
+				// data local en priorité, sinon window.data
+				let src = (typeof data !== 'undefined' && data && data.length > 0) ? data : [];
+				if (src.length === 0 && window.data && window.data.length > 0) src = window.data;
+				// Synchroniser dans les deux sens pour les appels suivants
+				if (src.length > 0) {
+					try { if (!data || data.length === 0) data = src; } catch(e) {}
+					window.data = src;
+				}
+
 				const selectedTypeMusique = filterTypeMusique.value.trim().toLowerCase();
 				const prevValue = filterArtist.value;
 
@@ -4509,61 +4469,79 @@ window.addEventListener('pagehide', () => {
 			}
 
 			function applyFilters() {
-				// Source unique : window.data (toujours syncé)
-				const src = window.data || [];
-				if (src.length === 0) return;
-				// Maintenir l'alias local à jour
-				data = src;
-				window.filteredData = data;
-				filteredData = data;
+				// Si données locales vides, utiliser window.data (chargé depuis Drive)
+				if ((!data || data.length === 0) && window.data && window.data.length > 0) {
+					data = window.data;
+					console.log('⚙ applyFilters: data synchronisé depuis window.data —', data.length, 'lignes');
+				}
+				const filterTypeMusique = document.getElementById('filterTypeMusique').value.toLowerCase();
+				const filterGenre = document.getElementById('filterGenre').value.toLowerCase();
+				const filterArtist = document.getElementById('filterArtist').value.toLowerCase();
+				const filterMusicien = document.getElementById('filterMusicien').value.toLowerCase();
+				const filterFormat = document.getElementById('filterFormat').value.toLowerCase();
+				const filterEtiquette = document.getElementById('filterEtiquette').value.toLowerCase();
+				const filterAnnee = document.getElementById('filterAnnee').value.toLowerCase();
+				const filterRemarques = document.getElementById('filterRemarques').value.toLowerCase();
 
-				const valTypeMusique = document.getElementById('filterTypeMusique').value.trim().toLowerCase();
-				const valGenre       = document.getElementById('filterGenre').value.trim().toLowerCase();
-				const valArtist      = document.getElementById('filterArtist').value.trim().toLowerCase();
-				const valMusicien    = document.getElementById('filterMusicien').value.trim().toLowerCase();
-				const valFormat      = document.getElementById('filterFormat').value.trim().toLowerCase();
-				const valEtiquette   = document.getElementById('filterEtiquette').value.trim().toLowerCase();
-				const valAnnee       = document.getElementById('filterAnnee').value.trim().toLowerCase();
-				const valRemarques   = document.getElementById('filterRemarques').value.trim().toLowerCase();
+				// DEBUG MOBILE — bandeau visible temporaire (supprimé — déplacé après filtrage)
+				filteredData = data.filter(row => {
+					const typeMusiqueMatch = !filterTypeMusique || (row['Type Musique'] && row['Type Musique'].toLowerCase().includes(filterTypeMusique));
+					const genreMatch = !filterGenre || (row['Genre musical'] && row['Genre musical'].toLowerCase().includes(filterGenre));
+					const artistMatch = !filterArtist || (row.Compositeur && row.Compositeur.toLowerCase().includes(filterArtist));
+					const musicienMatch = !filterMusicien || (row.Musicien && row.Musicien.split(',').some(m => {
+						// Recherche directement dans le Nom Complet du musicien dans la ligne de données
+						return m.trim().toLowerCase().includes(filterMusicien);
+					}));
+					const formatMatch = !filterFormat || (row.Format && row.Format.toLowerCase().includes(filterFormat));
+					const etiquetteMatch = !filterEtiquette || (row.Etiquette && row.Etiquette.toLowerCase().includes(filterEtiquette));
+					const anneeMatch = !filterAnnee || (row['Année de sortie'] && row['Année de sortie'].toLowerCase().includes(filterAnnee));
+					const epoqueMatch = true;
+					const titreMatch = true;
+					const remarquesMatch = !filterRemarques || (row.Remarques && row.Remarques.toLowerCase().includes(filterRemarques));
 
-				filteredData = src.filter(row => {
-					if (valTypeMusique && !(row['Type Musique']  || '').toLowerCase().includes(valTypeMusique)) return false;
-					if (valGenre       && !(row['Genre musical'] || '').toLowerCase().includes(valGenre))       return false;
-					if (valArtist      && !(row['Compositeur']   || '').toLowerCase().includes(valArtist))      return false;
-					if (valMusicien    && !(row['Musicien']      || '').toLowerCase().includes(valMusicien))    return false;
-					if (valFormat      && !(row['Format']        || '').toLowerCase().includes(valFormat))      return false;
-					if (valEtiquette   && !(row['Etiquette']     || '').toLowerCase().includes(valEtiquette))   return false;
-					if (valAnnee       && !(row['Année de sortie']|| '').toLowerCase().includes(valAnnee))      return false;
-					if (valRemarques   && !(row['Remarques']     || '').toLowerCase().includes(valRemarques))   return false;
-					return true;
+					return typeMusiqueMatch && genreMatch && artistMatch && musicienMatch && formatMatch && etiquetteMatch && anneeMatch && epoqueMatch && titreMatch && remarquesMatch;
 				});
 
-				window.filteredData = filteredData;
-				console.log('applyFilters → ' + filteredData.length + '/' + src.length + ' lignes');
+				// DEBUG MOBILE — bandeau visible après filtrage
+				{
+					let debugEl = document.getElementById('_debugBanner');
+					if (!debugEl) {
+						debugEl = document.createElement('div');
+						debugEl.id = '_debugBanner';
+						debugEl.style.cssText = 'position:fixed;top:50px;left:0;right:0;background:#c00;color:#fff;font-size:11px;padding:4px 8px;z-index:9999;word-break:break-all;';
+						document.body.appendChild(debugEl);
+					}
+					const activeFilters = {filterTypeMusique,filterGenre,filterArtist,filterMusicien,filterFormat,filterEtiquette,filterAnnee,filterRemarques};
+					const nonEmpty = Object.entries(activeFilters).filter(([,v]) => v !== '');
+					const msg = nonEmpty.length > 0
+						? '⚠ FILTRES: ' + nonEmpty.map(([k,v]) => k+'=«'+v+'»').join(' | ') + ' → ' + filteredData.length + '/' + data.length + ' lignes'
+						: '✓ Aucun filtre — filteredData=' + filteredData.length + ' / data=' + data.length;
+					debugEl.textContent = msg;
+					debugEl.style.background = nonEmpty.length > 0 ? '#c00' : '#080';
+					setTimeout(() => { debugEl.style.display = 'none'; }, 6000);
+				}
 
 				currentPage = 1;
+				// On trie les données filtrées avant de les afficher
 				updateFormatFilter();
 				sortTable(sortColumn);
 			}
 
 			function clearFilters() {
 				document.getElementById('filterTypeMusique').value = '';
-				document.getElementById('filterGenre').value      = '';
-				document.getElementById('filterArtist').value     = '';
-				document.getElementById('filterMusicien').value   = '';
-				document.getElementById('filterFormat').value     = '';
-				document.getElementById('filterEtiquette').value  = '';
-				document.getElementById('filterAnnee').value      = '';
-				document.getElementById('filterRemarques').value  = '';
-				// Sync mobiles
-				['mFilterTypeMusique','mFilterGenre','mFilterArtist','mFilterMusicien',
-				 'mFilterFormat','mFilterEtiquette','mFilterAnnee','mFilterRemarques'].forEach(id => {
-					const el = document.getElementById(id);
-					if (el) el.value = '';
-				});
-				// Repeupler les listes (sans filtre)
-				window.populateComposerList();
-				updateFormatFilter();
+				document.getElementById('filterGenre').value = '';
+				document.getElementById('filterArtist').value = '';
+				document.getElementById('filterMusicien').value = '';
+				document.getElementById('filterFormat').value = '';
+				document.getElementById('filterEtiquette').value = '';
+				document.getElementById('filterAnnee').value = '';
+				// document.getElementById('filterEpoque').value = ''; // Supprimé
+				// document.getElementById('filterTitre').value = ''; // Supprimé
+				document.getElementById('filterRemarques').value = '';
+
+				// Réinitialiser la liste des compositeurs
+				populateComposerList();
+
 				applyFilters();
 			}
 
@@ -5141,26 +5119,21 @@ window.addEventListener('pagehide', () => {
 			}
 
 
-			window.editArtist = function(initialArtiste) {
-				const src = window.artistData || [];
-				const artist = src.find(a => a.Initialartiste === initialArtiste);
-				if (!artist) { 
-					console.error('editArtist: artiste introuvable:', initialArtiste, '— artistData.length=', src.length);
-					alert('Artiste introuvable : ' + initialArtiste);
-					return; 
-				}
+			function editArtist(initialArtiste) {
+				const artist = artistData.find(a => a.Initialartiste === initialArtiste);
+				if (!artist) return;
 
-				document.getElementById('aType').value        = artist.ACI || '';
-				document.getElementById('aMnémo').value       = artist.Initialartiste || '';
-				document.getElementById('aMnémo').readOnly    = true;
-				document.getElementById('aNomComplet').value  = artist['Nom Complet'] || '';
+				document.getElementById('aType').value = artist.ACI; // Le champ ACI est caché, on le charge
+				document.getElementById('aMnémo').value = artist.Initialartiste || '';
+				document.getElementById('aMnémo').readOnly = true; // Le Mnémo est en lecture seule en mode modification
+				document.getElementById('aNomComplet').value = artist['Nom Complet'] || '';
 				document.getElementById('aAnneeNaissance').value = artist['Année naissance'] || '';
-				document.getElementById('aAnneeDeces').value  = artist['Année décès'] || '';
-				document.getElementById('aPrenom').value      = artist.Prénom || '';
-				document.getElementById('aNom').value         = artist.Nom || '';
+				document.getElementById('aAnneeDeces').value = artist['Année décès'] || '';
+				document.getElementById('aPrenom').value = artist.Prénom || '';
+				document.getElementById('aNom').value = artist.Nom || '';
 				document.getElementById('aNationalite').value = artist.Nationalité || '';
-				document.getElementById('aInstrument').value  = artist.Instrument || '';
-				document.getElementById('aRemarque').value    = artist.Remarque || '';
+				document.getElementById('aInstrument').value = artist.Instrument || '';
+				document.getElementById('aRemarque').value = artist.Remarque || ''; // Ajout du chargement de la Remarque
 
 				if (artist['Type Artiste'] === 'Interprète') {
 					document.getElementById('aInterpreteRadio').checked = true;
@@ -5168,28 +5141,11 @@ window.addEventListener('pagehide', () => {
 					document.getElementById('aCompositeurRadio').checked = true;
 				}
 
-				document.getElementById('aTypeMusique').value  = artist['Type Musique'] || '';
+				document.getElementById('aTypeMusique').value = artist['Type Musique'] || '';
 				document.getElementById('aGenreMusical').value = artist['Genre Musical'] || '';
 
-				closeModal('artistListModal');
 				openModal('artistModal');
-			};
-
-			window.deleteArtist = function(initialArtiste) {
-				if (!confirm('Supprimer l\'artiste « ' + initialArtiste + ' » ?')) return;
-				const src = window.artistData || [];
-				const idx = src.findIndex(a => a.Initialartiste === initialArtiste);
-				if (idx === -1) { 
-					console.error('deleteArtist: introuvable:', initialArtiste);
-					alert('Artiste introuvable : ' + initialArtiste);
-					return; 
-				}
-				src.splice(idx, 1);
-				window.artistData = src;
-				try { artistData = src; } catch(e) {}
-				console.log('✓ Artiste supprimé:', initialArtiste, '— reste', src.length, 'artistes');
-				if (typeof window.populateArtistList === 'function') window.populateArtistList();
-			};
+			}
 
 			function convertToCSV(dataArray) {
 				if (dataArray.length === 0) return '';
@@ -5377,8 +5333,23 @@ window.addEventListener('pagehide', () => {
 
 
 			// Initial setup
-			// Les écouteurs principaux sont définis plus haut (filterTypeMusique change, filterArtist change, etc.)
-			// On garde seulement l'écouteur de recherche artiste
+			document.querySelectorAll('.sidebar input[type="text"]').forEach(input => {
+				input.addEventListener('input', applyFilters);
+			});
+			document.querySelectorAll('.sidebar select').forEach(select => {
+				// On retire l'écouteur générique pour filterGenre car il a sa propre logique
+				if (select.id !== 'filterGenre') {
+					select.addEventListener('change', applyFilters);
+				}
+			});
+			document.getElementById('filterTypeMusique').addEventListener('input', function () {
+				// Lorsque le Type Musique est modifié manuellement, on met à jour la liste des compositeurs
+				populateComposerList();
+				applyFilters();
+			});
+			document.getElementById('filterArtist').addEventListener('change', applyFilters);
+			document.getElementById('filterFormat').addEventListener('change', applyFilters);
+			document.getElementById('filterMusicien').addEventListener('input', applyFilters); // Ajout de l'écouteur pour le nouveau filtre musicien
 			document.getElementById('artistSearch').addEventListener('input', populateArtistList);
 
 			// Appliquer le tri initial par Date achat après le chargement des données
@@ -5646,7 +5617,6 @@ window.addEventListener('pagehide', () => {
 									if (row.ACI === 'Interprète') row.ACI = '1';
 									return row;
 								});
-								window.artistData = artistData; // sync global
 								artistFileName = 'Artistes.csv';
 								
 								document.getElementById('artistCsvFileName').textContent = artistFileName;
@@ -6016,11 +5986,7 @@ window.loadAllFromDrive = async function() {
 				});
 				console.log('directRender: _genreToTypeMusique peuplée, ' + Object.keys(window._genreToTypeMusique).length + ' genres');
 
-				fill('filterTypeMusique', uq(rows.map(r => r['Type Musique'])), true, '--- Tous les types ---');
-				// Sync select mobile Type Musique
-				const mTMdr = document.getElementById('mFilterTypeMusique');
-				const dTMdr = document.getElementById('filterTypeMusique');
-				if (mTMdr && dTMdr) { mTMdr.innerHTML = dTMdr.innerHTML; mTMdr.value = ''; }
+				fill('typeMusiqueList', uq(rows.map(r => r['Type Musique'])),   false);
 				fill('filterGenre',     uq(rows.map(r => r['Genre musical'])),   true,  '--- Tous les genres ---');
 				fill('genreList',       uq(rows.map(r => r['Genre musical'])),   false);
 				fill('filterFormat',    uq(rows.flatMap(r => (r.Format||'').split(',').map(f=>f.trim()))), true, '--- Tous les supports ---');
@@ -6190,19 +6156,20 @@ window.populateAnneeList = function() {
 	console.log('✓ Année de sortie list populated:', uniqueAnnees.length, 'items');
 };
 
-// Peuple le datalist 'composerList' du formulaire d'édition (≠ filterArtist des filtres)
-window.populateComposerDatalist = function() {
+window.populateComposerList = function() {
 	const datalist = document.getElementById('composerList');
-	if (!datalist) return;
-	const src = window.data || [];
+	if (!datalist || !data || data.length === 0) return;
+	
 	datalist.innerHTML = '';
-	const uniqueComposers = [...new Set(src.map(row => row['Compositeur']).filter(Boolean))].sort();
+	const uniqueComposers = [...new Set(data.map(row => row['Compositeur']).filter(Boolean))].sort();
+	
 	uniqueComposers.forEach(composer => {
 		const option = document.createElement('option');
 		option.value = composer;
 		datalist.appendChild(option);
 	});
-	console.log('✓ composerList (édition) populated:', uniqueComposers.length, 'items');
+	
+	console.log('✓ Compositeur list populated:', uniqueComposers.length, 'items');
 };
 
 window.populateMusicienList = function() {
@@ -6295,10 +6262,9 @@ window.populateArtistList = function() {
 		
 		// Actions
 		const actionsCell = row.insertCell();
-		const initId = (artist.Initialartiste || '').replace(/'/g, "\\'");
 		actionsCell.innerHTML = `
-			<button onclick="window.editArtist('${initId}')" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;">✏️</button>
-			<button onclick="window.deleteArtist('${initId}')" style="padding: 0.25rem 0.5rem;">🗑️</button>
+			<button onclick="editArtist(${index})" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;">✏️</button>
+			<button onclick="deleteArtist(${index})" style="padding: 0.25rem 0.5rem;">🗑️</button>
 		`;
 	});
 	
@@ -6561,13 +6527,6 @@ window.syncFiltersToMobile = function() {
  * À appeler après chaque populateFilters().
  */
 window.syncMobileSelects = function() {
-	// Type de musique
-	const srcTM = document.getElementById('filterTypeMusique');
-	const dstTM = document.getElementById('mFilterTypeMusique');
-	if (srcTM && dstTM) {
-		dstTM.innerHTML = srcTM.innerHTML;
-		dstTM.value = srcTM.value;
-	}
 	// Genre musical : mFilterGenre est un input, on sync juste la valeur
 	const srcGenre = document.getElementById('filterGenre');
 	const dstGenre = document.getElementById('mFilterGenre');
