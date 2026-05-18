@@ -2837,13 +2837,12 @@ window.addEventListener('pagehide', () => {
 		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
 			<h2 style="margin:0; color:#334a91; font-size:1.2rem; white-space:nowrap;">🎵 Hall of Fame 📱</h2>
 		</div>
-		<div class="topbar-hide-mobile" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-			<label for="csvFileInput" class="highlight-btn">📁 Fichier source</label>
+		<div class="topbar-hide-mobile" style="display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap; border:2px solid #d8dbe8; border-radius:8px; padding:0.25rem 0.5rem; background:#f0f4ff;">
+			<span style="font-size:0.7rem; font-weight:bold; color:#334a91; white-space:nowrap; margin-right:0.15rem;">📂 Charger fichier local</span>
+			<label for="csvFileInput" class="highlight-btn" style="font-size:0.72rem; padding:0.25rem 0.45rem;">📁 Source (.csv)</label>
 			<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="csvFileName" class="file-info"></span>
-		</div>
-		<div class="topbar-hide-mobile" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-			<label for="artistCsvFileInput" class="highlight-btn">👤 Fichier artistes</label>
+			<label for="artistCsvFileInput" class="highlight-btn" style="font-size:0.72rem; padding:0.25rem 0.45rem;">👤 Artistes (.csv)</label>
 			<input type="file" id="artistCsvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="artistCsvFileName" class="file-info"></span>
 		</div>
@@ -2855,8 +2854,8 @@ window.addEventListener('pagehide', () => {
 			<button onclick="loadAllFromDrive()" style="min-width:auto; padding:0.5rem 0.75rem; background:#388e3c; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Charger depuis Drive">⬇️ Drive</button>
 			<button onclick="saveAllToDrive()" style="min-width:auto; padding:0.5rem 0.75rem; background:#1976d2; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Sauvegarder sur Drive">💾 Drive</button>
 			<div id="syncSpinnerTopbar" class="sync-spinner"></div>
-			<button id="showArtistListBtn" class="highlight-btn">📋 Artistes</button>
-			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()">📊 Stats</button>
+			<button id="showArtistListBtn" class="highlight-btn">📋 Liste des artistes</button>
+			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()">📊 Statistiques</button>
 		</div>
 	</div>
 	
@@ -5498,10 +5497,6 @@ window.addEventListener('pagehide', () => {
 	</div>
 </div>
 
-<!-- À placer juste avant </body> -->
-<button onclick="testDrive()" class="fixed-test-drive-btn" style="position:fixed;bottom:80px;right:10px;z-index:9999;padding:15px;background:red;color:white;font-weight:bold;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-	🔍 TEST DRIVE
-</button>
 
 <script>
 function testDrive() {
