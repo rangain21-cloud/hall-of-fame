@@ -2846,16 +2846,16 @@ window.addEventListener('pagehide', () => {
 			<input type="file" id="artistCsvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="artistCsvFileName" class="file-info"></span>
 		</div>
-		<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-			<div id="rowCountDisplay" style="margin-right: 0.625rem;">0 lignes</div>
+		<div style="display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">
+			<div id="rowCountDisplay" style="margin-right:0.3rem; font-size:0.72rem;">0 lignes</div>
 			<!-- Badge modifications non sauvegardées -->
 			<button id="unsavedBadge" onclick="showUnsavedPopup()" title="Des modifications non sauvegardées sont en attente — cliquez pour sauvegarder">⚠️ Non sauvegardé</button>
-			<button id="driveStatusBtnTopbar" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()" style="min-width:auto; padding:0.5rem 0.75rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">☁ Connecter Drive</button>
-			<button onclick="loadAllFromDrive()" style="min-width:auto; padding:0.5rem 0.75rem; background:#388e3c; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Charger depuis Drive">⬇️ Drive</button>
-			<button onclick="saveAllToDrive()" style="min-width:auto; padding:0.5rem 0.75rem; background:#1976d2; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Sauvegarder sur Drive">💾 Drive</button>
+			<button id="driveStatusBtnTopbar" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">☁ Connecter Drive</button>
+			<button onclick="loadAllFromDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#388e3c; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Charger depuis Drive">⬇️ Drive</button>
+			<button onclick="saveAllToDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#1976d2; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Sauvegarder sur Drive">💾 Drive</button>
 			<div id="syncSpinnerTopbar" class="sync-spinner"></div>
-			<button id="showArtistListBtn" class="highlight-btn">📋 Liste des artistes</button>
-			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()">📊 Statistiques</button>
+			<button id="showArtistListBtn" class="highlight-btn" style="font-size:0.72rem; padding:0.25rem 0.45rem;">📋 Liste des artistes</button>
+			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()" style="font-size:0.72rem; padding:0.25rem 0.45rem;">📊 Statistiques</button>
 		</div>
 	</div>
 	
