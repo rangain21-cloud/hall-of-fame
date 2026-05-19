@@ -1162,12 +1162,25 @@
 			color: #fff !important;
 			font-weight: bold;
 			border: 1px solid #334a91;
-			padding: 0.5rem 0.625rem;
-			/* 8px 10px -> 0.5rem 0.625rem */
+			padding: 0.25rem 0.45rem;
+			font-size: 0.72rem;
 			cursor: pointer;
 			border-radius: 0.25rem;
-			/* 4px -> 0.25rem */
 			display: inline-block;
+		}
+
+		/* Nom de fichier affiché dans la topbar */
+		.file-info {
+			font-size: 0.72rem;
+			color: #334a91;
+			font-style: italic;
+			font-weight: 600;
+			white-space: nowrap;
+			max-width: 10rem;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: inline-block;
+			vertical-align: middle;
 		}
 
 		/* Styles pour le champ "Cherche artiste" et son commentaire */
@@ -2914,10 +2927,10 @@ window.addEventListener('pagehide', () => {
 		</div>
 		<div class="topbar-hide-mobile" style="display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap; border:2px solid #d8dbe8; border-radius:8px; padding:0.25rem 0.5rem; background:#f0f4ff;">
 			<span style="font-size:0.7rem; font-weight:bold; color:#334a91; white-space:nowrap; margin-right:0.15rem;">📂 Charger fichier local</span>
-			<label for="csvFileInput" class="highlight-btn" style="font-size:0.72rem; padding:0.25rem 0.45rem;">📁 Source (.csv)</label>
+			<label for="csvFileInput" class="highlight-btn">📁 Source (.csv)</label>
 			<input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="csvFileName" class="file-info"></span>
-			<label for="artistCsvFileInput" class="highlight-btn" style="font-size:0.72rem; padding:0.25rem 0.45rem;">👤 Artistes (.csv)</label>
+			<label for="artistCsvFileInput" class="highlight-btn">👤 Artistes (.csv)</label>
 			<input type="file" id="artistCsvFileInput" accept=".csv,.txt" style="display:none;">
 			<span id="artistCsvFileName" class="file-info"></span>
 		</div>
@@ -2929,8 +2942,8 @@ window.addEventListener('pagehide', () => {
 			<button onclick="loadAllFromDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#388e3c; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Charger depuis Drive">⬇️ Drive</button>
 			<button onclick="saveAllToDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#1976d2; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Sauvegarder sur Drive">💾 Drive</button>
 			<div id="syncSpinnerTopbar" class="sync-spinner"></div>
-			<button id="showArtistListBtn" class="highlight-btn" style="font-size:0.72rem; padding:0.25rem 0.45rem;">📋 Liste des artistes</button>
-			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()" style="font-size:0.72rem; padding:0.25rem 0.45rem;">📊 Statistiques</button>
+			<button id="showArtistListBtn" class="highlight-btn">📋 Liste des artistes</button>
+			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()">📊 Statistiques</button>
 		</div>
 	</div>
 	
