@@ -191,7 +191,12 @@
 			text-align: center;
 		}
 
-		/* ── POIGNÉE DE REDIMENSIONNEMENT DE LA SIDEBAR ── */
+		/* ── PAVÉ DRIVE : masqué en version desktop (double emploi avec la topbar) ── */
+		@media (min-width: 769px) {
+			#burgerDriveSection {
+				display: none;
+			}
+		}
 		.sidebar-resizer {
 			position: absolute;
 			top: 0;
@@ -6264,7 +6269,37 @@ window.addEventListener('load', function() {
 });
 
 // ===================================================================
-// SYNCHRONISATION driveStatusBtn topbar ↔ sidebar
+// SYNCHRONISATION SPINNER topbar ↔ sidebar
+// ===================================================================
+// Toutes les opérations Drive utilisent #syncSpinner (sidebar).
+// On répercute son état sur #syncSpinnerTopbar via MutationObserver.
+(function() {
+	window.addEventListener('load', function() {
+		const spinSide = document.getElementById('syncSpinner');
+		const spinTop  = document.getElementById('syncSpinnerTopbar');
+		if (!spinSide || !spinTop) return;
+
+		new MutationObserver(function() {
+			if (spinSide.classList.contains('active')) {
+				spinTop.classList.add('active');
+			} else {
+				spinTop.classList.remove('active');
+			}
+		}).observe(spinSide, { attributes: true, attributeFilter: ['class'] });
+
+		// Sécurité : si le spinner reste bloqué > 30s, on le coupe
+		const _origAdd = spinSide.classList.add.bind(spinSide.classList);
+		spinSide.classList.add = function(...args) {
+			_origAdd(...args);
+			if (args.includes('active')) {
+				clearTimeout(spinSide._safetyTimer);
+				spinSide._safetyTimer = setTimeout(function() {
+					spinSide.classList.remove('active');
+				}, 30000);
+			}
+		};
+	});
+})();
 // ===================================================================
 // Patch updateDriveStatus pour mettre à jour les deux boutons
 (function() {
