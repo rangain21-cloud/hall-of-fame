@@ -5645,6 +5645,8 @@ window.saveAllToDrive = async function() {
 		}
 		
 		console.log('✓ Fichiers sauvegardés sur Drive avec succès !');
+		showToast('✓ Fichiers sauvegardés sur Drive', 'success');
+		markSaved(); // ← effacer le badge "Non sauvegardé"
 		// Supprimé : alert('✓ Fichiers sauvegardés sur Drive avec succès !');
 	} catch (error) {
 		console.error('Erreur sauvegarde Drive:', error);
