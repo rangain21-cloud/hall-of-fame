@@ -126,6 +126,7 @@
 			top: 3.125rem;
 			height: calc(100vh - 3.125rem);
 			overflow-y: auto;
+			overflow-x: hidden;
 		}
 
 		/* 280px -> 17.5rem, 16px -> 1rem, 12px -> 0.75rem */
@@ -180,6 +181,49 @@
 
 		.sidebar button:active {
 			transform: scale(0.95); /* Feedback visuel au toucher */
+		}
+
+		/* Permettre le retour à la ligne dans les boutons sidebar */
+		.sidebar button {
+			white-space: normal;
+			word-break: break-word;
+			line-height: 1.2;
+			text-align: center;
+		}
+
+		/* ── POIGNÉE DE REDIMENSIONNEMENT DE LA SIDEBAR ── */
+		.sidebar-resizer {
+			position: absolute;
+			top: 0;
+			right: -4px;
+			width: 8px;
+			height: 100%;
+			cursor: col-resize;
+			z-index: 1002;
+			background: transparent;
+			transition: background 0.2s;
+		}
+		.sidebar-resizer:hover,
+		.sidebar-resizer.active {
+			background: rgba(51, 74, 145, 0.25);
+		}
+		.sidebar-resizer::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 3px;
+			height: 40px;
+			border-radius: 3px;
+			background: rgba(51, 74, 145, 0.45);
+		}
+		/* Sur mobile : poignée plus visible */
+		@media (max-width: 768px) {
+			.sidebar-resizer {
+				right: -6px;
+				width: 12px;
+			}
 		}
 
 		/* 8px 10px -> 0.5rem 0.625rem */
@@ -6062,7 +6106,104 @@ window.toggleColWidthPanel   = toggleColWidthPanel;
 window.closeColWidthPanel    = closeColWidthPanel;
 window.initMainTableResizers = initMainTableResizers;
 
-console.log('✓ Contrôle largeur colonnes + poignées tactiles initialisés');
+// ===================================================================
+// REDIMENSIONNEMENT DE LA SIDEBAR (drag sur la poignée droite)
+// ===================================================================
+(function() {
+	const MIN_WIDTH = 150;  // px
+	const MAX_WIDTH = 520;  // px
+
+	window.addEventListener('load', function() {
+		const sidebar = document.getElementById('sidebar');
+		if (!sidebar) return;
+
+		// Créer la poignée et l'insérer après la sidebar
+		const resizer = document.createElement('div');
+		resizer.id = 'sidebarResizer';
+		resizer.className = 'sidebar-resizer';
+		resizer.title = 'Redimensionner le panneau';
+		sidebar.parentNode.insertBefore(resizer, sidebar.nextSibling);
+
+		let active = false;
+		let startX  = 0;
+		let startW  = 0;
+
+		function positionResizer() {
+			// Sur mobile (sidebar en overlay), ne pas afficher si sidebar fermée
+			const rect = sidebar.getBoundingClientRect();
+			if (rect.width === 0 || rect.right <= 0) {
+				resizer.style.display = 'none';
+				return;
+			}
+			resizer.style.display = 'block';
+			resizer.style.position = 'fixed';
+			resizer.style.top    = rect.top  + 'px';
+			resizer.style.left   = (rect.right - 4) + 'px';
+			resizer.style.width  = '10px';
+			resizer.style.height = rect.height + 'px';
+			resizer.style.zIndex = '1050';
+			resizer.style.cursor = 'col-resize';
+		}
+
+		// Repositionner après scroll, resize, transitions
+		window.addEventListener('resize', positionResizer);
+		window.addEventListener('scroll', positionResizer, true);
+		// Observer les mutations de la sidebar (ouverture/fermeture mobile)
+		new MutationObserver(positionResizer).observe(sidebar, { attributes: true, attributeFilter: ['class', 'style'] });
+		positionResizer();
+
+		function startResize(clientX) {
+			active  = true;
+			startX  = clientX;
+			startW  = sidebar.getBoundingClientRect().width;
+			resizer.classList.add('active');
+			document.body.style.userSelect       = 'none';
+			document.body.style.webkitUserSelect = 'none';
+			document.body.style.cursor           = 'col-resize';
+		}
+
+		function doResize(clientX) {
+			if (!active) return;
+			const newW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (clientX - startX)));
+			sidebar.style.width    = newW + 'px';
+			sidebar.style.minWidth = newW + 'px';
+			positionResizer();
+		}
+
+		function endResize() {
+			if (!active) return;
+			active = false;
+			resizer.classList.remove('active');
+			document.body.style.userSelect       = '';
+			document.body.style.webkitUserSelect = '';
+			document.body.style.cursor           = '';
+			positionResizer();
+		}
+
+		// Souris
+		resizer.addEventListener('mousedown', e => { startResize(e.clientX); e.preventDefault(); });
+		document.addEventListener('mousemove', e => { if (active) doResize(e.clientX); });
+		document.addEventListener('mouseup',   ()  => endResize());
+
+		// Tactile
+		resizer.addEventListener('touchstart', e => {
+			startResize(e.touches[0].clientX);
+			e.preventDefault();
+		}, { passive: false });
+		document.addEventListener('touchmove', e => {
+			if (!active) return;
+			doResize(e.touches[0].clientX);
+			e.preventDefault();
+		}, { passive: false });
+		document.addEventListener('touchend',    () => endResize(), { passive: true });
+		document.addEventListener('touchcancel', () => endResize(), { passive: true });
+	});
+})();
+
+console.log('✓ Redimensionnement sidebar initialisé');
+
+
+
 
 // ===================================================================
 // MENU BURGER — PAVÉS COLLAPSIBLES
