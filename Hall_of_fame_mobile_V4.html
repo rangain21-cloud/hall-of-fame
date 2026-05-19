@@ -2934,7 +2934,7 @@ window.addEventListener('pagehide', () => {
 	<!-- Panneau de contrôle des largeurs de colonnes -->
 	<div id="colWidthPanel">
 		<h3>
-			<span>⇔ Largeur des colonnes</span>
+			<span>⇔ Colonnes</span>
 			<button onclick="closeColWidthPanel()" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:#666;">✕</button>
 		</h3>
 		<div class="col-width-row">
@@ -3017,7 +3017,7 @@ window.addEventListener('pagehide', () => {
 						<datalist id="etiquetteList"></datalist>
 					</div>
 					<div>
-						<label for="filterAnnee">Liste par année de sortie</label>
+						<label for="filterAnnee">Année de sortie</label>
 						<input list="anneeList" id="filterAnnee" autocomplete="off">
 						<datalist id="anneeList"></datalist>
 					</div>
@@ -3046,8 +3046,8 @@ window.addEventListener('pagehide', () => {
 						<label for="artistCsvFileInput" class="highlight-btn" style="display:block; text-align:center; cursor:pointer;">👤 Fichier artistes</label>
 						<span id="artistCsvFileNameSidebar" class="file-info" style="font-size:0.8rem; color:#476bb6;"></span>
 					</div>
-					<button onclick="downloadSourceCSV()">💾 Sauver fichier source</button>
-					<button onclick="downloadArtistCSV()">💾 Sauver fichier artistes</button>
+					<button onclick="downloadSourceCSV()">💾 Sauver source</button>
+					<button onclick="downloadArtistCSV()">💾 Sauver artistes</button>
 				</div>
 			</div>
 
@@ -3059,7 +3059,7 @@ window.addEventListener('pagehide', () => {
 				<div class="burger-section-body">
 					<button id="driveStatusBtn" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()" style="background:#757575; color:white; border:none; border-radius:8px; font-weight:600; width:100%;">☁ Connecter Drive</button>
 					<button onclick="loadAllFromDrive()" style="background:#388e3c; color:white; border:none; border-radius:8px; font-weight:600; width:100%;">⬇️ Charger depuis Drive</button>
-					<button onclick="saveAllToDrive()" style="background:#1976d2; color:white; border:none; border-radius:8px; font-weight:600; width:100%;">💾 Sauvegarder sur Drive</button>
+					<button onclick="saveAllToDrive()" style="background:#1976d2; color:white; border:none; border-radius:8px; font-weight:600; width:100%;">💾 Sauver sur Drive</button>
 					<div id="syncSpinner" class="sync-spinner"></div>
 				</div>
 			</div>
@@ -3072,7 +3072,7 @@ window.addEventListener('pagehide', () => {
 				<div class="burger-section-body" style="display:none;">
 					<button onclick="openVisualizationModal()" class="burger-mobile-only">📊 Stats</button>
 					<button onclick="testDrive()" style="background:#e53935; color:white; border:none; border-radius:8px; font-weight:bold; width:100%;">🔍 TEST DRIVE</button>
-					<button onclick="toggleColWidthPanel()" style="width:100%;">⇔ Largeur des colonnes</button>
+					<button onclick="toggleColWidthPanel()" style="width:100%;">⇔ Colonnes</button>
 				</div>
 			</div>
 
@@ -6179,6 +6179,40 @@ window.initMainTableResizers = initMainTableResizers;
 			document.body.style.cursor           = '';
 			positionResizer();
 		}
+
+		// Masquer la poignée quand une modale est ouverte
+		let _modalOpenCount = 0;
+		const _origOpen  = window.openModal  || function(){};
+		const _origClose = window.closeModal || function(){};
+
+		window.openModal = function(id) {
+			_origOpen(id);
+			_modalOpenCount++;
+			resizer.style.display = 'none';
+		};
+		window.closeModal = function(id) {
+			_origClose(id);
+			_modalOpenCount = Math.max(0, _modalOpenCount - 1);
+			if (_modalOpenCount === 0) positionResizer();
+		};
+
+		// Couvrir aussi les ouvertures directes via style.display (ex: artistModal)
+		const _watchedModals = ['entryModal', 'artistListModal', 'visualizationModal', 'artistModal'];
+		_watchedModals.forEach(function(mid) {
+			const el = document.getElementById(mid);
+			if (!el) return;
+			new MutationObserver(function() {
+				const anyVisible = _watchedModals.some(function(id) {
+					const m = document.getElementById(id);
+					return m && m.style.display !== '' && m.style.display !== 'none';
+				});
+				if (anyVisible) {
+					resizer.style.display = 'none';
+				} else if (_modalOpenCount === 0) {
+					positionResizer();
+				}
+			}).observe(el, { attributes: true, attributeFilter: ['style'] });
+		});
 
 		// Souris
 		resizer.addEventListener('mousedown', e => { startResize(e.clientX); e.preventDefault(); });
