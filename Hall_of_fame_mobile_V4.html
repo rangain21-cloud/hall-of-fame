@@ -196,6 +196,31 @@
 			#burgerDriveSection {
 				display: none;
 			}
+			/* Masquer le filtre Année de sortie en desktop */
+			#filterAnnee,
+			#filterAnnee + datalist,
+			label[for="filterAnnee"] {
+				display: none;
+			}
+			/* Réduire les espacements de la sidebar en desktop */
+			.sidebar {
+				gap: 0.3rem;
+				padding: 0.5rem 0.75rem;
+			}
+			.burger-section-body {
+				gap: 0.3rem !important;
+			}
+			.burger-section-body > div {
+				gap: 0.15rem;
+			}
+			.sidebar input,
+			.sidebar button,
+			.sidebar select {
+				margin-top: 0.15rem;
+			}
+			.sidebar label {
+				margin-bottom: 0;
+			}
 		}
 		.sidebar-resizer {
 			position: absolute;
@@ -6185,38 +6210,33 @@ window.initMainTableResizers = initMainTableResizers;
 			positionResizer();
 		}
 
-		// Masquer la poignée quand une modale est ouverte
-		let _modalOpenCount = 0;
-		const _origOpen  = window.openModal  || function(){};
-		const _origClose = window.closeModal || function(){};
-
-		window.openModal = function(id) {
-			_origOpen(id);
-			_modalOpenCount++;
-			resizer.style.display = 'none';
-		};
-		window.closeModal = function(id) {
-			_origClose(id);
-			_modalOpenCount = Math.max(0, _modalOpenCount - 1);
-			if (_modalOpenCount === 0) positionResizer();
-		};
-
-		// Couvrir aussi les ouvertures directes via style.display (ex: artistModal)
+		// ── Masquer la poignée quand une modale est visible ──────────────────
+		// On observe le body en subtree pour détecter tout changement de style
+		// sur les éléments .modal, sans patcher openModal/closeModal.
 		const _watchedModals = ['entryModal', 'artistListModal', 'visualizationModal', 'artistModal'];
+
+		function anyModalVisible() {
+			return _watchedModals.some(function(id) {
+				const m = document.getElementById(id);
+				return m && m.style.display !== '' && m.style.display !== 'none';
+			});
+		}
+
+		function updateResizerVisibility() {
+			if (anyModalVisible()) {
+				resizer.style.display = 'none';
+			} else {
+				positionResizer();
+			}
+		}
+
+		// Observer chaque modale individuellement (plus léger qu'observer tout le body)
 		_watchedModals.forEach(function(mid) {
 			const el = document.getElementById(mid);
-			if (!el) return;
-			new MutationObserver(function() {
-				const anyVisible = _watchedModals.some(function(id) {
-					const m = document.getElementById(id);
-					return m && m.style.display !== '' && m.style.display !== 'none';
-				});
-				if (anyVisible) {
-					resizer.style.display = 'none';
-				} else if (_modalOpenCount === 0) {
-					positionResizer();
-				}
-			}).observe(el, { attributes: true, attributeFilter: ['style'] });
+			if (el) {
+				new MutationObserver(updateResizerVisibility)
+					.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+			}
 		});
 
 		// Souris
