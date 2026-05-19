@@ -3387,6 +3387,9 @@ window.addEventListener('pagehide', () => {
 
 		let currentDrilldown = []; // [Type Musique, Genre musical]
 
+		// Map Genre Musical → Type Musique (alimentée par populateFilters, accessible globalement)
+		let genreToFirstTypeMusique = {};
+
 		function openVisualizationModal() {
 			if (!data || data.length === 0) {
 				alert("Veuillez d'abord sélectionner et charger le fichier source (CSV) pour la visualisation.");
@@ -3932,8 +3935,7 @@ window.addEventListener('pagehide', () => {
 				return rows;
 			}
 
-			// Map pour lier Genre Musical à la première Type Musique trouvée
-			let genreToFirstTypeMusique = {};
+			// Map pour lier Genre Musical à la première Type Musique trouvée (déclarée en scope global)
 
 			// Fonction principale pour mettre à jour le champ 'Type Musique'
 			function updateTypeMusiqueLogic() {
@@ -4012,33 +4014,24 @@ window.addEventListener('pagehide', () => {
 					typeMusiqueList.appendChild(option);
 				});
 
-				// Liste par genre musical (select)
-				filterGenre.innerHTML = '<option value="">--- Tous les genres ---</option>';
-				[...genres].sort().forEach(value => {
-					const option = document.createElement('option');
-					option.value = value;
-					option.textContent = value;
-					filterGenre.appendChild(option);
-				});
+				// Liste par genre musical (select) + map Genre→TypeMusique + listener
+				// Délégué à populateGenreList() qui gère aussi le listener change
+				if (typeof window.populateGenreList === 'function') {
+					window.populateGenreList();
+				} else {
+					// Fallback si populateGenreList pas encore disponible
+					filterGenre.innerHTML = '<option value="">--- Tous les genres ---</option>';
+					[...genres].sort().forEach(value => {
+						const option = document.createElement('option');
+						option.value = value;
+						option.textContent = value;
+						filterGenre.appendChild(option);
+					});
+				}
 				filterGenre.selectedIndex = 0; // Forcer "Tous" sur Android
 
-				// Écouteur Genre → Type Musique (référence stable pour éviter les doublons)
-				if (!filterGenre._genreHandler) {
-					filterGenre._genreHandler = function() {
-						const selectedGenre = filterGenre.value;
-						// Mettre à jour Type de musique en concordance avec le genre sélectionné
-						if (selectedGenre && genreToFirstTypeMusique[selectedGenre]) {
-							filterTypeMusique.value = genreToFirstTypeMusique[selectedGenre];
-						} else {
-							filterTypeMusique.value = '';
-						}
-						populateComposerList();
-						applyFilters();
-					};
-					filterGenre.addEventListener('change', filterGenre._genreHandler);
-				}
-				// Alias pour compatibilité avec les appels existants à handleGenreChange
-				var handleGenreChange = filterGenre._genreHandler;
+				// Alias de compatibilité
+				var handleGenreChange = window.handleGenreChange || function(){};
 
 				// Liste par musicien (datalist pour input)
 				const musicienList = document.getElementById('musicienList');
@@ -5119,6 +5112,18 @@ window.addEventListener('pagehide', () => {
 				}
 			});
 			document.getElementById('filterTypeMusique').addEventListener('input', function () {
+				// Lorsque le Type Musique est modifié manuellement, remettre le genre à "Tous"
+				const filterGenreEl = document.getElementById('filterGenre');
+				if (filterGenreEl && this.value === '') {
+					filterGenreEl.value = '';
+				} else if (filterGenreEl) {
+					// Si le type tapé ne correspond plus au genre sélectionné, déselectionner le genre
+					const currentGenre = filterGenreEl.value;
+					if (currentGenre && genreToFirstTypeMusique[currentGenre] &&
+						genreToFirstTypeMusique[currentGenre].toLowerCase() !== this.value.toLowerCase()) {
+						filterGenreEl.value = '';
+					}
+				}
 				// Lorsque le Type Musique est modifié manuellement, on met à jour la liste des compositeurs
 				populateComposerList();
 				applyFilters();
@@ -5749,19 +5754,55 @@ window.populateTypeMusiqueList = function() {
 
 window.populateGenreList = function() {
 	const select = document.getElementById('filterGenre');
+	const filterTypeMusique = document.getElementById('filterTypeMusique');
 	if (!select || !data || data.length === 0) return;
-	
+
+	// Reconstruire la map Genre → Type Musique à partir des données
+	genreToFirstTypeMusique = {};
+	data.forEach(function(row) {
+		const genre = row['Genre musical'];
+		const type  = row['Type Musique'];
+		if (genre && type && !genreToFirstTypeMusique[genre]) {
+			genreToFirstTypeMusique[genre] = type;
+		}
+	});
+
 	select.innerHTML = '<option value="">-- Tous --</option>';
 	const uniqueGenres = [...new Set(data.map(row => row['Genre musical']).filter(Boolean))].sort();
-	
+
 	uniqueGenres.forEach(genre => {
 		const option = document.createElement('option');
 		option.value = genre;
 		option.textContent = genre;
 		select.appendChild(option);
 	});
-	
-	console.log('✓ Genre musical list populated:', uniqueGenres.length, 'items');
+
+	// (Ré)attacher le listener Genre → Type Musique après reconstruction du select
+	// On retire l'ancien pour éviter les doublons
+	if (select._genreHandler) {
+		select.removeEventListener('change', select._genreHandler);
+	}
+	select._genreHandler = function() {
+		const selectedGenre = select.value;
+		if (filterTypeMusique) {
+			if (selectedGenre && genreToFirstTypeMusique[selectedGenre]) {
+				filterTypeMusique.value = genreToFirstTypeMusique[selectedGenre];
+				// Feedback visuel bref
+				filterTypeMusique.style.transition = 'background 0.15s';
+				filterTypeMusique.style.background = '#d4edda';
+				setTimeout(function() { filterTypeMusique.style.background = ''; }, 800);
+			} else {
+				filterTypeMusique.value = '';
+			}
+		}
+		if (typeof populateComposerList === 'function') populateComposerList();
+		if (typeof applyFilters === 'function') applyFilters();
+	};
+	select.addEventListener('change', select._genreHandler);
+	// Alias pour compatibilité
+	window.handleGenreChange = select._genreHandler;
+
+	console.log('✓ Genre musical list populated:', uniqueGenres.length, 'items, map:', Object.keys(genreToFirstTypeMusique).length, 'entries');
 };
 
 window.populateFormatList = function() {
