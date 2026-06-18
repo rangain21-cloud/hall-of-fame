@@ -1686,43 +1686,63 @@
 	}
 
 	async function loadGoogleAPI() {
-		const s1 = document.createElement('script');
-		s1.src = 'https://apis.google.com/js/api.js';
-		s1.async = true;
-		s1.defer = true;
-		s1.onload = async () => {
-			await waitForGAPI();
-			gapi.load('client', async () => {
-				await gapi.client.init({
-					apiKey: GDRIVE_CONFIG.API_KEY,
-					discoveryDocs: GDRIVE_CONFIG.DISCOVERY_DOCS,
-				});
-				gapiInited = true;
-				console.log('✓ GAPI OK');
-			});
-		};
-		document.head.appendChild(s1);
+		if (!navigator.onLine) return;
 
-		const s2 = document.createElement('script');
-		s2.src = 'https://accounts.google.com/gsi/client';
-		s2.async = true;
-		s2.defer = true;
-		s2.onload = async () => {
-			await waitForGIS();
-			tokenClient = google.accounts.oauth2.initTokenClient({
-				client_id: GDRIVE_CONFIG.CLIENT_ID,
-				scope: GDRIVE_CONFIG.SCOPES,
-				callback: (response) => {
-					if (response.error) return console.error('✗ OAuth:', response);
-					accessToken = response.access_token;
-					driveConnected = true;
-					updateDriveStatus(true);
+		// ── Charger api.js ──────────────────────────────────────────────
+		await new Promise((resolve, reject) => {
+			const s = document.createElement('script');
+			s.src = 'https://apis.google.com/js/api.js';
+			s.async = true; s.defer = true;
+			s.onload = resolve;
+			s.onerror = reject;
+			document.head.appendChild(s);
+		});
+
+		await waitForGAPI();
+
+		// ── Initialiser gapi.client (même pattern que Biblio) ───────────
+		await new Promise((resolve, reject) => {
+			gapi.load('client', async () => {
+				try {
+					await gapi.client.init({
+						apiKey: GDRIVE_CONFIG.API_KEY,
+						discoveryDocs: GDRIVE_CONFIG.DISCOVERY_DOCS,
+					});
+					gapiInited = true;
+					console.log('✓ GAPI initialisé');
+					resolve();
+				} catch (error) {
+					console.error('❌ Erreur init GAPI:', error);
+					reject(error);
 				}
 			});
-			gisInited = true;
-			console.log('✓ GIS OK');
-		};
-		document.head.appendChild(s2);
+		});
+
+		// ── Charger gsi/client ──────────────────────────────────────────
+		await new Promise((resolve, reject) => {
+			const s = document.createElement('script');
+			s.src = 'https://accounts.google.com/gsi/client';
+			s.async = true; s.defer = true;
+			s.onload = resolve;
+			s.onerror = reject;
+			document.head.appendChild(s);
+		});
+
+		await waitForGIS();
+
+		// ── Initialiser le token client ─────────────────────────────────
+		tokenClient = google.accounts.oauth2.initTokenClient({
+			client_id: GDRIVE_CONFIG.CLIENT_ID,
+			scope: GDRIVE_CONFIG.SCOPES,
+			callback: (response) => {
+				if (response.error) return console.error('✗ OAuth:', response);
+				accessToken = response.access_token;
+				driveConnected = true;
+				updateDriveStatus(true);
+			}
+		});
+		gisInited = true;
+		console.log('✓ GIS initialisé');
 	}
 
 	function connectToDrive() {
