@@ -5368,7 +5368,7 @@ window.addEventListener('pagehide', () => {
 					// Sauvegarder le fichier source
 					const sourceHeaders = Object.keys(data[0]);
 					const sourceCSV = convertToCSV(data, sourceHeaders);
-					await saveToGoogleDrive(sourceFileName || 'Hall_of_fame_source.csv', sourceCSV);
+					await saveToGoogleDrive(sourceFileName || 'HOF.csv', sourceCSV);
 
 					// Sauvegarder le fichier artistes
 					if (artistData && artistData.length > 0) {
@@ -5394,82 +5394,6 @@ window.addEventListener('pagehide', () => {
 				} catch (error) {
 					console.error('Erreur sauvegarde Drive:', error);
 					showToast('✗ Erreur lors de la sauvegarde', 'error');
-				}
-			}
-
-			// Charger tous les fichiers depuis Google Drive
-			async function loadAllFromDrive() {
-				if (!driveConnected) {
-					alert('Veuillez d\'abord vous connecter à Google Drive');
-					return;
-				}
-
-				try {
-					showToast('⬇️ Chargement en cours...', 'info');
-
-					// Charger le fichier source
-					const sourceContent = await loadFromGoogleDrive('Hall_of_fame_source.csv');
-					if (sourceContent) {
-						// Parser le CSV avec PapaParse
-						Papa.parse(sourceContent, {
-							header: true,
-							skipEmptyLines: true,
-							delimiter: '\t',
-							complete: function(results) {
-								data = results.data;
-								filteredData = data;
-								sourceFileName = 'Hall_of_fame_source.csv';
-								
-								// Mettre à jour l'UI
-								document.getElementById('csvFileName').textContent = sourceFileName;
-								populateTypeMusiqueList();
-								populateGenreList();
-								populateFormatList();
-								populateEtiquetteList();
-								populateAnneeList();
-								populateComposerList();
-								populateMusicienList();
-								sortColumn = 'Date achat';
-								sortDirection = 'desc';
-								applyFilters();
-								
-								showToast('✓ Fichier source chargé', 'success');
-							}
-						});
-					}
-
-					// Charger le fichier artistes
-					const artistContent = await loadFromGoogleDrive('Artistes.csv');
-					if (artistContent) {
-						Papa.parse(artistContent, {
-							header: true,
-							skipEmptyLines: true,
-							delimiter: '\t',
-							complete: function(results) {
-								artistData = results.data.map(row => {
-									// Convertir ACI de texte vers numérique
-									if (row.ACI === 'Compositeur') row.ACI = '0';
-									if (row.ACI === 'Interprète') row.ACI = '1';
-									return row;
-								});
-								artistFileName = 'Artistes.csv';
-								
-								document.getElementById('artistCsvFileName').textContent = artistFileName;
-								populateArtistList();
-								
-								showToast('✓ Fichier artistes chargé', 'success');
-							}
-						});
-					}
-
-					if (sourceContent || artistContent) {
-						showToast('✓ Données chargées depuis Drive', 'success');
-					} else {
-						showToast('⚠ Aucun fichier trouvé sur Drive', 'warning');
-					}
-				} catch (error) {
-					console.error('Erreur chargement Drive:', error);
-					showToast('✗ Erreur lors du chargement', 'error');
 				}
 			}
 
