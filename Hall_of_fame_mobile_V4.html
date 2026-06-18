@@ -1759,7 +1759,10 @@
 			
 			const search = await gapi.client.drive.files.list({
 				q: `name='${fileName}' and trashed=false`,
-				fields: 'files(id)'
+				fields: 'files(id)',
+				includeItemsFromAllDrives: true,
+				supportsAllDrives: true,
+				corpora: 'allDrives'
 			});
 			
 			const fileId = search.result.files[0]?.id;
@@ -1770,8 +1773,8 @@
 			form.append('file', blob);
 
 			const url = fileId 
-				? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
-				: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+				? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&supportsAllDrives=true`
+				: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true';
 
 			const res = await fetch(url, {
 				method: fileId ? 'PATCH' : 'POST',
@@ -1837,15 +1840,19 @@ async function loadFromGoogleDrive(fileName) {
 		while (true) {
 			const search = await gapi.client.drive.files.list({
 				q: `name='${currentFileName}' and trashed=false`,
-				fields: 'files(id)',
-				orderBy: 'modifiedTime desc'
+				fields: 'files(id, name, owners)',
+				orderBy: 'modifiedTime desc',
+				includeItemsFromAllDrives: true,
+				supportsAllDrives: true,
+				corpora: 'allDrives'
 			});
 			
 			if (search.result.files.length > 0) {
 				// Fichier trouvé
 				const res = await gapi.client.drive.files.get({
 					fileId: search.result.files[0].id,
-					alt: 'media'
+					alt: 'media',
+					supportsAllDrives: true
 				});
 				showToast(`✓ ${currentFileName} chargé`, 'success');
 				return res.body;
