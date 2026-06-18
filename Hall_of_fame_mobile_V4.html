@@ -1760,9 +1760,7 @@
 			const search = await gapi.client.drive.files.list({
 				q: `name='${fileName}' and trashed=false`,
 				fields: 'files(id)',
-				includeItemsFromAllDrives: true,
-				supportsAllDrives: true,
-				corpora: 'allDrives'
+				spaces: 'drive'
 			});
 			
 			const fileId = search.result.files[0]?.id;
@@ -1773,8 +1771,8 @@
 			form.append('file', blob);
 
 			const url = fileId 
-				? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&supportsAllDrives=true`
-				: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true';
+				? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
+				: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
 
 			const res = await fetch(url, {
 				method: fileId ? 'PATCH' : 'POST',
@@ -1838,66 +1836,28 @@ async function loadFromGoogleDrive(fileName) {
 
 		while (true) {
 			console.log(`🔍 Recherche Drive: "${currentFileName}"`);
-			let foundFileId = null;
 
-			// ── Passe 1 : Mon Drive uniquement ──────────────────────────────
-			try {
-				const r1 = await gapi.client.drive.files.list({
-					q: `name='${currentFileName}' and trashed=false`,
-					fields: 'files(id, name)',
-					orderBy: 'modifiedTime desc',
-					spaces: 'drive',
-					corpora: 'user'
-				});
-				console.log(`  Passe 1 (mon Drive): ${r1.result.files.length} résultat(s)`);
-				if (r1.result.files.length > 0) foundFileId = r1.result.files[0].id;
-			} catch(e) { console.warn('  Passe 1 échouée:', e.message); }
+			const search = await gapi.client.drive.files.list({
+				q: `name='${currentFileName}' and trashed=false`,
+				fields: 'files(id, name)',
+				spaces: 'drive',
+				orderBy: 'modifiedTime desc'
+			});
 
-			// ── Passe 2 : Fichiers partagés avec moi ────────────────────────
-			if (!foundFileId) {
-				try {
-					const r2 = await gapi.client.drive.files.list({
-						q: `name='${currentFileName}' and trashed=false and sharedWithMe=true`,
-						fields: 'files(id, name)',
-						orderBy: 'modifiedTime desc',
-						supportsAllDrives: true,
-						includeItemsFromAllDrives: true,
-						corpora: 'user'
-					});
-					console.log(`  Passe 2 (partagés avec moi): ${r2.result.files.length} résultat(s)`);
-					if (r2.result.files.length > 0) foundFileId = r2.result.files[0].id;
-				} catch(e) { console.warn('  Passe 2 échouée:', e.message); }
-			}
+			const files = search.result.files;
+			console.log(`  → ${files ? files.length : 0} résultat(s)`);
 
-			// ── Passe 3 : Tous drives accessibles ───────────────────────────
-			if (!foundFileId) {
-				try {
-					const r3 = await gapi.client.drive.files.list({
-						q: `name='${currentFileName}' and trashed=false`,
-						fields: 'files(id, name)',
-						orderBy: 'modifiedTime desc',
-						supportsAllDrives: true,
-						includeItemsFromAllDrives: true,
-						corpora: 'allDrives'
-					});
-					console.log(`  Passe 3 (tous drives): ${r3.result.files.length} résultat(s)`);
-					if (r3.result.files.length > 0) foundFileId = r3.result.files[0].id;
-				} catch(e) { console.warn('  Passe 3 échouée:', e.message); }
-			}
-
-			if (foundFileId) {
-				console.log(`  ✓ Fichier trouvé, ID: ${foundFileId}`);
+			if (files && files.length > 0) {
 				const res = await gapi.client.drive.files.get({
-					fileId: foundFileId,
-					alt: 'media',
-					supportsAllDrives: true
+					fileId: files[0].id,
+					alt: 'media'
 				});
 				showToast(`✓ ${currentFileName} chargé`, 'success');
 				return res.body;
 			}
 
-			// ── Fichier introuvable → pop-up saisie manuelle ─────────────────
-			console.warn(`  ✗ "${currentFileName}" introuvable sur les 3 passes`);
+			// Fichier introuvable → pop-up saisie manuelle
+			console.warn(`  ✗ "${currentFileName}" introuvable`);
 			document.getElementById('syncSpinner')?.classList.remove('active');
 			const newName = await openDriveFilePicker(currentFileName);
 			document.getElementById('syncSpinner')?.classList.add('active');
@@ -5698,11 +5658,9 @@ function testDrive() {
 		console.log('🔍 Recherche des fichiers .csv accessibles...');
 		gapi.client.drive.files.list({
 			q: "mimeType='text/csv' and trashed=false",
-			fields: 'files(id, name, owners, shared)',
+			fields: 'files(id, name, shared)',
 			pageSize: 20,
-			supportsAllDrives: true,
-			includeItemsFromAllDrives: true,
-			corpora: 'allDrives'
+			spaces: 'drive'
 		}).then(r => {
 			const files = r.result.files || [];
 			if (files.length === 0) {
