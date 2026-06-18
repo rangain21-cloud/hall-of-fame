@@ -1830,27 +1830,65 @@ async function loadFromGoogleDrive(fileName) {
 		showToast('Connectez Drive d\'abord', 'warning');
 		return null;
 	}
-	
+
 	try {
 		document.getElementById('syncSpinner')?.classList.add('active');
-		
+
 		let currentFileName = fileName;
 
-		// Rechercher le fichier, avec relance via pop-up si introuvable
 		while (true) {
-			const search = await gapi.client.drive.files.list({
-				q: `name='${currentFileName}' and trashed=false`,
-				fields: 'files(id, name, owners)',
-				orderBy: 'modifiedTime desc',
-				includeItemsFromAllDrives: true,
-				supportsAllDrives: true,
-				corpora: 'allDrives'
-			});
-			
-			if (search.result.files.length > 0) {
-				// Fichier trouvé
+			console.log(`🔍 Recherche Drive: "${currentFileName}"`);
+			let foundFileId = null;
+
+			// ── Passe 1 : Mon Drive uniquement ──────────────────────────────
+			try {
+				const r1 = await gapi.client.drive.files.list({
+					q: `name='${currentFileName}' and trashed=false`,
+					fields: 'files(id, name)',
+					orderBy: 'modifiedTime desc',
+					spaces: 'drive',
+					corpora: 'user'
+				});
+				console.log(`  Passe 1 (mon Drive): ${r1.result.files.length} résultat(s)`);
+				if (r1.result.files.length > 0) foundFileId = r1.result.files[0].id;
+			} catch(e) { console.warn('  Passe 1 échouée:', e.message); }
+
+			// ── Passe 2 : Fichiers partagés avec moi ────────────────────────
+			if (!foundFileId) {
+				try {
+					const r2 = await gapi.client.drive.files.list({
+						q: `name='${currentFileName}' and trashed=false and sharedWithMe=true`,
+						fields: 'files(id, name)',
+						orderBy: 'modifiedTime desc',
+						supportsAllDrives: true,
+						includeItemsFromAllDrives: true,
+						corpora: 'user'
+					});
+					console.log(`  Passe 2 (partagés avec moi): ${r2.result.files.length} résultat(s)`);
+					if (r2.result.files.length > 0) foundFileId = r2.result.files[0].id;
+				} catch(e) { console.warn('  Passe 2 échouée:', e.message); }
+			}
+
+			// ── Passe 3 : Tous drives accessibles ───────────────────────────
+			if (!foundFileId) {
+				try {
+					const r3 = await gapi.client.drive.files.list({
+						q: `name='${currentFileName}' and trashed=false`,
+						fields: 'files(id, name)',
+						orderBy: 'modifiedTime desc',
+						supportsAllDrives: true,
+						includeItemsFromAllDrives: true,
+						corpora: 'allDrives'
+					});
+					console.log(`  Passe 3 (tous drives): ${r3.result.files.length} résultat(s)`);
+					if (r3.result.files.length > 0) foundFileId = r3.result.files[0].id;
+				} catch(e) { console.warn('  Passe 3 échouée:', e.message); }
+			}
+
+			if (foundFileId) {
+				console.log(`  ✓ Fichier trouvé, ID: ${foundFileId}`);
 				const res = await gapi.client.drive.files.get({
-					fileId: search.result.files[0].id,
+					fileId: foundFileId,
 					alt: 'media',
 					supportsAllDrives: true
 				});
@@ -1858,13 +1896,13 @@ async function loadFromGoogleDrive(fileName) {
 				return res.body;
 			}
 
-			// Fichier introuvable → afficher la pop-up
+			// ── Fichier introuvable → pop-up saisie manuelle ─────────────────
+			console.warn(`  ✗ "${currentFileName}" introuvable sur les 3 passes`);
 			document.getElementById('syncSpinner')?.classList.remove('active');
 			const newName = await openDriveFilePicker(currentFileName);
 			document.getElementById('syncSpinner')?.classList.add('active');
 
 			if (!newName) {
-				// L'utilisateur a annulé
 				showToast(`⚠️ ${currentFileName} ignoré`, 'warning');
 				return null;
 			}
@@ -1873,7 +1911,7 @@ async function loadFromGoogleDrive(fileName) {
 
 	} catch (error) {
 		console.error('✗ Erreur Drive:', error);
-		showToast('✗ Erreur chargement', 'error');
+		showToast('✗ Erreur chargement: ' + (error.message || error), 'error');
 		return null;
 	} finally {
 		document.getElementById('syncSpinner')?.classList.remove('active');
@@ -5624,7 +5662,8 @@ window.addEventListener('pagehide', () => {
 <div id="driveFilePickerModal" role="dialog" aria-modal="true" aria-labelledby="drivePickerTitle">
 	<div id="driveFilePickerBox">
 		<h3 id="drivePickerTitle">📁 Fichier introuvable sur Drive</h3>
-		<p id="drivePickerDesc">Le fichier <strong id="drivePickerFileName"></strong> n'a pas été trouvé sur votre Google Drive. Saisissez le nom exact du fichier ou annulez.</p>
+		<p id="drivePickerDesc">Le fichier <strong id="drivePickerFileName"></strong> n'a pas été trouvé sur votre Google Drive.<br><br>
+		<small>💡 Vérifiez que le fichier existe bien dans votre Drive ou qu'il vous a été partagé. Saisissez le nom exact (sensible à la casse) ou annulez.</small></p>
 		<input id="driveFilePickerInput" type="text" placeholder="ex: HOF.csv" autocomplete="off" spellcheck="false">
 		<div class="drive-picker-actions">
 			<button class="drive-picker-btn-cancel" onclick="closeDriveFilePicker(false)">Annuler</button>
@@ -5643,16 +5682,41 @@ function testDrive() {
 		'4. GAPI disponible': typeof gapi !== 'undefined',
 		'5. GAPI initialisé': gapiInited,
 		'6. GIS disponible': typeof google !== 'undefined',
-		'7. GIS initialisé': gisInited
+		'7. GIS initialisé': gisInited,
+		'8. Drive connecté': driveConnected
 	};
-	
+
 	let message = 'DIAGNOSTIC GOOGLE DRIVE:\n\n';
 	for (let key in infos) {
 		message += (infos[key] ? '✅' : '❌') + ' ' + key + '\n';
 	}
-	
-	alert(message);
+	_nativeAlert(message);
 	console.table(infos);
+
+	// Si connecté, lister les fichiers CSV visibles pour aider au diagnostic
+	if (driveConnected && gapiInited) {
+		console.log('🔍 Recherche des fichiers .csv accessibles...');
+		gapi.client.drive.files.list({
+			q: "mimeType='text/csv' and trashed=false",
+			fields: 'files(id, name, owners, shared)',
+			pageSize: 20,
+			supportsAllDrives: true,
+			includeItemsFromAllDrives: true,
+			corpora: 'allDrives'
+		}).then(r => {
+			const files = r.result.files || [];
+			if (files.length === 0) {
+				console.warn('⚠️ Aucun fichier .csv trouvé sur ce compte Drive');
+				showToast('⚠️ Aucun CSV trouvé sur ce Drive', 'warning');
+			} else {
+				console.log(`✓ ${files.length} fichier(s) CSV visibles:`);
+				files.forEach(f => console.log(`  - "${f.name}" (id: ${f.id}, partagé: ${f.shared})`));
+				const names = files.map(f => f.name).join('\n  ');
+				showToast(`${files.length} CSV trouvés — voir console`, 'info');
+				_nativeAlert(`Fichiers CSV visibles sur ce Drive:\n\n  ${names}\n\nSi HOF.csv ou Artistes.csv n'y figure pas, ils ne sont pas encore accessibles depuis ce compte.`);
+			}
+		}).catch(e => console.error('Erreur listing CSV:', e));
+	}
 }
 </script>
 
