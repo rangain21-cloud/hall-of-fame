@@ -69,12 +69,14 @@
 
 		/* Conteneur de défilement pour le tableau */
 		#table-scroll-container {
-			/* Remplit exactement l'espace restant dans .main (flex column) */
-			flex: 1;
-			min-height: 0; /* essentiel : autorise flex item à rétrécir sous son contenu */
+			/* Utilise l'espace restant dans .main */
+			height: calc(100vh - 3.125rem - 1rem - 2.5rem);
+			/* Hauteur totale - topbar - padding-top du .main - hauteur h1 estimée */
 			overflow-y: auto;
 			overflow-x: auto; /* Défilement horizontal sur mobile */
 			-webkit-overflow-scrolling: touch; /* Défilement fluide iOS */
+			margin-top: 0.875rem;
+			/* Marge inférieure du h1 */
 		}
 
 		/* ------------------------------------------------------------------- */
@@ -261,11 +263,6 @@
 			flex: 1;
 			padding: 1rem 1.125rem;
 			width: 90vw;
-			display: flex;
-			flex-direction: column;
-			height: calc(100vh - 3.125rem);
-			box-sizing: border-box;
-			overflow: hidden;
 		}
 
 		/* 16px 18px -> 1rem 1.125rem */
@@ -654,8 +651,6 @@
 			.main {
 				width: 100%;
 				padding: 0.5rem;
-				box-sizing: border-box;
-				overflow: hidden;
 			}
 
 			/* Tableau responsive */
@@ -734,7 +729,9 @@
 
 		/* Support orientation paysage sur mobile */
 		@media (max-width: 768px) and (orientation: landscape) {
-			/* #table-scroll-container : flex:1 + min-height:0, aucun calc() nécessaire */
+			#table-scroll-container {
+				height: calc(100vh - 3.125rem - 0.5rem);
+			}
 
 			.sidebar {
 				width: 60vw;
@@ -3875,7 +3872,8 @@ window.addEventListener('pagehide', () => {
 		let data = [];
 		let artistData = [];
 		let filteredData = [];
-		const ITEMS_PER_PAGE = 100;
+		// Pagination supprimée : tout le contenu filtré est rendu directement
+		const ITEMS_PER_PAGE = Infinity;
 		let currentPage = 1;
 		let sortColumn = 'Date achat';
 		let sortDirection = 'desc';
@@ -4745,9 +4743,8 @@ window.addEventListener('pagehide', () => {
 					return;
 				}
 				tbody.innerHTML = '';
-				const start = (currentPage - 1) * ITEMS_PER_PAGE;
-				const end = start + ITEMS_PER_PAGE;
-				const pageData = filteredData.slice(start, end);
+				const pageData = filteredData; // toutes les lignes (pagination supprimée)
+				const start = 0;
 
 				// Mise à jour de l'indicateur de tri dans l'entête
 				document.querySelectorAll('#dataTable th').forEach(th => {
