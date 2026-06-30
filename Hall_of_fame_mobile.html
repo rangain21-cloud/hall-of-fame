@@ -1766,10 +1766,24 @@
 	function updateDriveStatus(connected) {
 		const btn = document.getElementById('driveStatusBtn');
 		if (btn) {
-			btn.textContent = connected ? '☁ Drive OK' : '☁ Connecter Drive';
+			btn.textContent = connected ? '☁ Connecté' : '☁ Connecter';
 			btn.style.background = connected ? '#4caf50' : '#757575';
 		}
 		document.getElementById('syncSpinner')?.classList.remove('active');
+	}
+
+	// Fait passer un bouton Drive (Charger/Sauver) en vert avec le libellé "réussi"
+	// pendant 2,5 secondes, puis revient à l'état gris initial.
+	function flashDriveButton(btnId, doneLabel, idleLabel) {
+		const btn = document.getElementById(btnId);
+		if (!btn) return;
+		if (btn._flashTimeout) clearTimeout(btn._flashTimeout);
+		btn.textContent = doneLabel;
+		btn.style.background = '#4caf50';
+		btn._flashTimeout = setTimeout(() => {
+			btn.textContent = idleLabel;
+			btn.style.background = '#757575';
+		}, 2500);
 	}
 
 	async function saveToGoogleDrive(fileName, content, mimeType = 'text/csv') {
@@ -2987,9 +3001,9 @@ window.addEventListener('pagehide', () => {
 			<div id="rowCountDisplay" style="margin-right:0.3rem; font-size:0.72rem;">0 lignes</div>
 			<!-- Badge modifications non sauvegardées -->
 			<button id="unsavedBadge" onclick="showUnsavedPopup()" title="Des modifications non sauvegardées sont en attente — cliquez pour sauvegarder">⚠️ Non sauvegardé</button>
-			<button id="driveStatusBtnTopbar" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">☁ Connecter Drive</button>
-			<button onclick="loadAllFromDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#388e3c; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Charger depuis Drive">⬇️ Drive</button>
-			<button onclick="saveAllToDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#1976d2; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Sauvegarder sur Drive">💾 Drive</button>
+			<button id="driveStatusBtnTopbar" onclick="driveConnected ? disconnectFromDrive() : connectToDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">☁ Connecter</button>
+			<button id="loadDriveBtnTopbar" onclick="loadAllFromDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Charger depuis Drive">⬇️ Charger</button>
+			<button id="saveDriveBtnTopbar" onclick="saveAllToDrive()" style="min-width:auto; padding:0.25rem 0.45rem; font-size:0.72rem; background:#757575; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;" title="Sauvegarder sur Drive">💾 Sauver</button>
 			<div id="syncSpinnerTopbar" class="sync-spinner"></div>
 			<button id="showArtistListBtn" class="highlight-btn">📋 Liste des artistes</button>
 			<button id="showVisualizationBtn" class="highlight-btn topbar-hide-mobile" onclick="openVisualizationModal()">📊 Statistiques</button>
@@ -5424,10 +5438,10 @@ window.addEventListener('pagehide', () => {
 				const btnTop = document.getElementById('driveStatusBtnTopbar');
 				if (btnTop) {
 					if (driveConnected) {
-						btnTop.textContent = '☁ Drive OK';
+						btnTop.textContent = '☁ Connecté';
 						btnTop.style.background = '#4caf50';
 					} else {
-						btnTop.textContent = '☁ Connecter Drive';
+						btnTop.textContent = '☁ Connecter';
 						btnTop.style.background = '#757575';
 					}
 				}
@@ -5435,10 +5449,10 @@ window.addEventListener('pagehide', () => {
 				const btnSide = document.getElementById('driveStatusBtn');
 				if (btnSide) {
 					if (driveConnected) {
-						btnSide.textContent = '☁ Drive OK';
+						btnSide.textContent = '☁ Connecté';
 						btnSide.style.background = '#4caf50';
 					} else {
-						btnSide.textContent = '☁ Connecter Drive';
+						btnSide.textContent = '☁ Connecter';
 						btnSide.style.background = '#757575';
 					}
 				}
@@ -5670,6 +5684,7 @@ window.saveAllToDrive = async function() {
 		console.log('✓ Fichiers sauvegardés sur Drive avec succès !');
 		showToast('✓ Fichiers sauvegardés sur Drive', 'success');
 		markSaved(); // ← effacer le badge "Non sauvegardé"
+		flashDriveButton('saveDriveBtnTopbar', '💾 Sauvé', '💾 Sauver');
 		// Supprimé : alert('✓ Fichiers sauvegardés sur Drive avec succès !');
 	} catch (error) {
 		console.error('Erreur sauvegarde Drive:', error);
@@ -5743,6 +5758,7 @@ window.loadAllFromDrive = async function() {
 		
 		if (sourceContent || artistContent) {
 			console.log('✓ Données chargées depuis Drive avec succès !');
+			flashDriveButton('loadDriveBtnTopbar', '⬇️ Chargé', '⬇️ Charger');
 			// Supprimé : alert('✓ Données chargées depuis Drive avec succès !');
 		} else {
 			alert('⚠ Aucun fichier trouvé sur Drive (cherche: HOF.csv et Artistes.csv)');
@@ -6395,13 +6411,13 @@ window.addEventListener('load', function() {
 		// Bouton topbar (renommé)
 		const btnTop = document.getElementById('driveStatusBtnTopbar');
 		if (btnTop) {
-			btnTop.textContent = connected ? '☁ Drive OK' : '☁ Connecter Drive';
+			btnTop.textContent = connected ? '☁ Connecté' : '☁ Connecter';
 			btnTop.style.background = connected ? '#4caf50' : '#757575';
 		}
 		// Bouton sidebar
 		const btnSide = document.getElementById('driveStatusBtn');
 		if (btnSide) {
-			btnSide.textContent = connected ? '☁ Drive OK' : '☁ Connecter Drive';
+			btnSide.textContent = connected ? '☁ Connecté' : '☁ Connecter';
 			btnSide.style.background = connected ? '#4caf50' : '#757575';
 		}
 	};
