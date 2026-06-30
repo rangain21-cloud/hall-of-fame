@@ -1772,18 +1772,22 @@
 		document.getElementById('syncSpinner')?.classList.remove('active');
 	}
 
-	// Fait passer un bouton Drive (Charger/Sauver) en vert avec le libellé "réussi"
-	// pendant 2,5 secondes, puis revient à l'état gris initial.
-	function flashDriveButton(btnId, doneLabel, idleLabel) {
+	// Passe un bouton Drive (Charger/Sauver) en vert avec le libellé "réussi" — reste vert.
+	function setDriveButtonDone(btnId, doneLabel) {
 		const btn = document.getElementById(btnId);
 		if (!btn) return;
-		if (btn._flashTimeout) clearTimeout(btn._flashTimeout);
+		if (btn._flashTimeout) { clearTimeout(btn._flashTimeout); btn._flashTimeout = null; }
 		btn.textContent = doneLabel;
 		btn.style.background = '#4caf50';
-		btn._flashTimeout = setTimeout(() => {
-			btn.textContent = idleLabel;
-			btn.style.background = '#757575';
-		}, 2500);
+	}
+
+	// Remet un bouton Drive (Charger/Sauver) en gris avec son libellé d'origine.
+	function setDriveButtonIdle(btnId, idleLabel) {
+		const btn = document.getElementById(btnId);
+		if (!btn) return;
+		if (btn._flashTimeout) { clearTimeout(btn._flashTimeout); btn._flashTimeout = null; }
+		btn.textContent = idleLabel;
+		btn.style.background = '#757575';
 	}
 
 	async function saveToGoogleDrive(fileName, content, mimeType = 'text/csv') {
@@ -5653,6 +5657,7 @@ window.saveAllToDrive = async function() {
 	
 	try {
 		console.log('💾 Début sauvegarde Drive...');
+		setDriveButtonIdle('saveDriveBtnTopbar', '💾 Sauver');
 		// Supprimé : alert('Sauvegarde sur Drive en cours...');
 		
 		// Sauvegarder le fichier source
@@ -5684,7 +5689,7 @@ window.saveAllToDrive = async function() {
 		console.log('✓ Fichiers sauvegardés sur Drive avec succès !');
 		showToast('✓ Fichiers sauvegardés sur Drive', 'success');
 		markSaved(); // ← effacer le badge "Non sauvegardé"
-		flashDriveButton('saveDriveBtnTopbar', '💾 Sauvé', '💾 Sauver');
+		setDriveButtonDone('saveDriveBtnTopbar', '💾 Sauvé');
 		// Supprimé : alert('✓ Fichiers sauvegardés sur Drive avec succès !');
 	} catch (error) {
 		console.error('Erreur sauvegarde Drive:', error);
@@ -5703,6 +5708,7 @@ window.loadAllFromDrive = async function() {
 	let hadError = false;
 	
 	console.log('⬇️ Début chargement Drive...');
+	setDriveButtonIdle('loadDriveBtnTopbar', '⬇️ Charger');
 	
 	// Charger HOF.csv (votre fichier source)
 	try {
@@ -5770,7 +5776,7 @@ window.loadAllFromDrive = async function() {
 	
 	if (sourceContent || artistContent) {
 		console.log('✓ Données chargées depuis Drive avec succès !');
-		flashDriveButton('loadDriveBtnTopbar', '⬇️ Chargé', '⬇️ Charger');
+		setDriveButtonDone('loadDriveBtnTopbar', '⬇️ Chargé');
 		if (hadError) showToast('⚠️ Chargement partiel (voir console)', 'warning');
 	} else if (hadError) {
 		alert('✗ Erreur lors du chargement (voir console)');
