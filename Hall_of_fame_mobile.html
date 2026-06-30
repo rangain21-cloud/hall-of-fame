@@ -5698,12 +5698,15 @@ window.loadAllFromDrive = async function() {
 		return;
 	}
 	
+	let sourceContent = null;
+	let artistContent = null;
+	let hadError = false;
+	
+	console.log('⬇️ Début chargement Drive...');
+	
+	// Charger HOF.csv (votre fichier source)
 	try {
-		console.log('⬇️ Début chargement Drive...');
-		// Supprimé : alert('Chargement depuis Drive en cours...');
-		
-		// Charger HOF.csv (votre fichier source)
-		const sourceContent = await loadFromGoogleDrive('HOF.csv');
+		sourceContent = await loadFromGoogleDrive('HOF.csv');
 		if (sourceContent) {
 			const lines = sourceContent.split('\n').filter(l => l.trim());
 			const headers = lines[0].split('\t');
@@ -5733,9 +5736,14 @@ window.loadAllFromDrive = async function() {
 			
 			console.log('✓ Fichier source chargé:', data.length, 'lignes');
 		}
-		
-		// Charger Artistes.csv
-		const artistContent = await loadFromGoogleDrive('Artistes.csv');
+	} catch (error) {
+		hadError = true;
+		console.error('Erreur chargement HOF.csv:', error);
+	}
+	
+	// Charger Artistes.csv
+	try {
+		artistContent = await loadFromGoogleDrive('Artistes.csv');
 		if (artistContent) {
 			const lines = artistContent.split('\n').filter(l => l.trim());
 			const headers = lines[0].split('\t');
@@ -5755,17 +5763,19 @@ window.loadAllFromDrive = async function() {
 			
 			console.log('✓ Fichier artistes chargé:', artistData.length, 'lignes');
 		}
-		
-		if (sourceContent || artistContent) {
-			console.log('✓ Données chargées depuis Drive avec succès !');
-			flashDriveButton('loadDriveBtnTopbar', '⬇️ Chargé', '⬇️ Charger');
-			// Supprimé : alert('✓ Données chargées depuis Drive avec succès !');
-		} else {
-			alert('⚠ Aucun fichier trouvé sur Drive (cherche: HOF.csv et Artistes.csv)');
-		}
 	} catch (error) {
-		console.error('Erreur chargement Drive:', error);
-		alert('✗ Erreur lors du chargement: ' + error.message);
+		hadError = true;
+		console.error('Erreur chargement Artistes.csv:', error);
+	}
+	
+	if (sourceContent || artistContent) {
+		console.log('✓ Données chargées depuis Drive avec succès !');
+		flashDriveButton('loadDriveBtnTopbar', '⬇️ Chargé', '⬇️ Charger');
+		if (hadError) showToast('⚠️ Chargement partiel (voir console)', 'warning');
+	} else if (hadError) {
+		alert('✗ Erreur lors du chargement (voir console)');
+	} else {
+		alert('⚠ Aucun fichier trouvé sur Drive (cherche: HOF.csv et Artistes.csv)');
 	}
 };
 
