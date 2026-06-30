@@ -1,0 +1,1 @@
+Cette application permet de mémoriser les spectacles que tu as vus, d'enregistrer ta discothèque, ta ludithèque ta bibliothèque de logiciels. Naturellement il y a tous les outils de statistqiues et de filtrage à ta disposition
