@@ -4251,14 +4251,10 @@ window.addEventListener('pagehide', () => {
 				const instruments = new Set();
 				const compositeurs = new Set(); // Nouveau
 
-				// Récupérer les types de musique de la base principale (data)
-				data.forEach(row => {
-					if (row['Type Musique']) types.add(row['Type Musique']);
-				});
-
-				// Récupérer les genres, instruments et Noms Complets (pour Compositeur) de la base artistes (artistData)
+				// Récupérer les genres, types de musique, instruments et Noms Complets (pour Compositeur) de la base artistes (artistData)
 				artistData.forEach(row => {
 					if (row['Genre Musical']) genres.add(row['Genre Musical']); // Ajout des genres de la base artiste
+					if (row['Type Musique']) types.add(row['Type Musique']); // Ajout des types de musique de la base artiste
 					if (row.Instrument) instruments.add(row.Instrument);
 					if (row['Nom Complet']) compositeurs.add(row['Nom Complet']); // Alimentation du champ Compositeur avec Nom Complet des artistes
 				});
