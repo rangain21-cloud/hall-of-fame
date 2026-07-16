@@ -5778,6 +5778,7 @@ window.loadAllFromDrive = async function() {
 			
 			document.getElementById('artistCsvFileName').textContent = artistFileName;
 			if (typeof populateArtistList === 'function') populateArtistList();
+			if (typeof populateArtistDataLists === 'function') populateArtistDataLists();
 			
 			console.log('✓ Fichier artistes chargé:', artistData.length, 'lignes');
 		}
