@@ -1797,19 +1797,24 @@
 		btn.style.background = '#757575';
 	}
 
-	async function saveToGoogleDrive(fileName, content, mimeType = 'text/csv') {
+	async function saveToGoogleDrive(fileName, content, mimeType = 'text/csv', knownFileId = null) {
 		if (!driveConnected) { showToast('Connectez Drive d\'abord', 'warning'); return; }
 		
 		try {
 			document.getElementById('syncSpinner')?.classList.add('active');
 			
-			const search = await gapi.client.drive.files.list({
-				q: `name='${fileName}' and trashed=false`,
-				fields: 'files(id)',
-				spaces: 'drive'
-			});
-			
-			const fileId = search.result.files[0]?.id;
+			let fileId = knownFileId;
+			if (!fileId) {
+				// Pas d'identifiant connu : on recherche par nom, en prenant le plus récemment modifié
+				// en cas de doublons (Drive autorise plusieurs fichiers avec le même nom).
+				const search = await gapi.client.drive.files.list({
+					q: `name='${fileName}' and trashed=false`,
+					fields: 'files(id, modifiedTime)',
+					spaces: 'drive',
+					orderBy: 'modifiedTime desc'
+				});
+				fileId = search.result.files[0]?.id;
+			}
 			const metadata = { name: fileName, mimeType };
 			const blob = new Blob([content], { type: mimeType });
 			const form = new FormData();
@@ -1828,7 +1833,17 @@
 
 			if (res.ok) {
 				showToast(`✓ ${fileName} sauvegardé`, 'success');
-				return await res.json();
+				const result = await res.json();
+				// Mémoriser l'ID pour les prochaines sauvegardes de ce même fichier
+				if (result?.id) {
+					if (fileName === (typeof sourceFileName !== 'undefined' ? sourceFileName : null) || fileName === 'HOF.csv') {
+						window._driveSourceFileId = result.id;
+					}
+					if (fileName === (typeof artistFileName !== 'undefined' ? artistFileName : null) || fileName === 'Artistes.csv') {
+						window._driveArtistFileId = result.id;
+					}
+				}
+				return result;
 			}
 		} catch (error) {
 			console.error('✗ Erreur Drive:', error);
@@ -1899,6 +1914,14 @@ async function loadFromGoogleDrive(fileName) {
 					alt: 'media'
 				});
 				showToast(`✓ ${currentFileName} chargé`, 'success');
+				// Mémoriser l'ID exact du fichier chargé pour que la sauvegarde cible le même fichier
+				// (Drive autorise plusieurs fichiers avec un nom identique)
+				if (currentFileName === 'HOF.csv' || currentFileName === (typeof sourceFileName !== 'undefined' ? sourceFileName : null)) {
+					window._driveSourceFileId = files[0].id;
+				}
+				if (currentFileName === 'Artistes.csv' || currentFileName === (typeof artistFileName !== 'undefined' ? artistFileName : null)) {
+					window._driveArtistFileId = files[0].id;
+				}
 				return res.body;
 			}
 
@@ -3932,6 +3955,7 @@ window.addEventListener('pagehide', () => {
 
 				document.getElementById('csvFileName').textContent = file.name;
 				sourceFileName = file.name;
+				window._driveSourceFileId = null; // Fichier local chargé : on ne connaît plus son ID Drive éventuel
 				const reader = new FileReader();
 				reader.onload = function (e) {
 					const text = e.target.result;
@@ -3962,6 +3986,7 @@ window.addEventListener('pagehide', () => {
 
 				document.getElementById('artistCsvFileName').textContent = file.name;
 				artistFileName = file.name; // Sauvegarder le nom du fichier pour la sauvegarde
+				window._driveArtistFileId = null; // Fichier local chargé : on ne connaît plus son ID Drive éventuel
 				const reader = new FileReader();
 				reader.onload = function (e) {
 					const text = e.target.result;
@@ -5419,7 +5444,7 @@ window.addEventListener('pagehide', () => {
 					// Sauvegarder le fichier source
 					const sourceHeaders = Object.keys(data[0]);
 					const sourceCSV = convertToCSV(data, sourceHeaders);
-					await saveToGoogleDrive(sourceFileName || 'HOF.csv', sourceCSV);
+					await saveToGoogleDrive(sourceFileName || 'HOF.csv', sourceCSV, 'text/csv', window._driveSourceFileId || null);
 
 					// Sauvegarder le fichier artistes
 					if (artistData && artistData.length > 0) {
@@ -5437,7 +5462,7 @@ window.addEventListener('pagehide', () => {
 							})
 						].join('\n');
 
-						await saveToGoogleDrive(artistFileName || 'Artistes.csv', artistCSVContent);
+						await saveToGoogleDrive(artistFileName || 'Artistes.csv', artistCSVContent, 'text/csv', window._driveArtistFileId || null);
 					}
 
 					showToast('✓ Tous les fichiers sauvegardés sur Drive', 'success');
@@ -5679,7 +5704,7 @@ window.saveAllToDrive = async function() {
 		}).join('\n');
 		const sourceWithHeaders = sourceHeaders.join('\t') + '\n' + sourceCSV;
 		
-		await saveToGoogleDrive(sourceFileName || 'HOF.csv', sourceWithHeaders);
+		await saveToGoogleDrive(sourceFileName || 'HOF.csv', sourceWithHeaders, 'text/csv', window._driveSourceFileId || null);
 		
 		// Sauvegarder le fichier artistes si présent
 		if (artistData && artistData.length > 0) {
@@ -5695,7 +5720,7 @@ window.saveAllToDrive = async function() {
 			}).join('\n');
 			const artistWithHeaders = artistHeaders.join('\t') + '\n' + artistCSV;
 			
-			await saveToGoogleDrive(artistFileName || 'Artistes.csv', artistWithHeaders);
+			await saveToGoogleDrive(artistFileName || 'Artistes.csv', artistWithHeaders, 'text/csv', window._driveArtistFileId || null);
 		}
 		
 		console.log('✓ Fichiers sauvegardés sur Drive avec succès !');
