@@ -1356,6 +1356,13 @@
 			width: 37.5ch;
 		}
 
+		select#aTypeMusique,
+		select#aGenreMusical {
+			appearance: auto;
+			-webkit-appearance: menulist;
+			background-color: #fff;
+		}
+
 		/* 25ch * 1.5 = 37.5ch */
 
 		/* ------------------------------------------------------------------- */
@@ -3428,12 +3435,12 @@ window.addEventListener('pagehide', () => {
 
 		<!-- Ligne 6: Type de Musique, Genre musical -->
 		<div class="row">
-			<label for="aTypeMusique">Type de Musique:</label><input list="aTypeMusiqueOptions" id="aTypeMusique"
-				style="width: 25ch;">
-			<datalist id="aTypeMusiqueOptions"></datalist>
-			<label for="aGenreMusical">Genre musical:</label><input list="aGenreMusicalOptions" id="aGenreMusical"
-				style="width: 43ch;">
-			<datalist id="aGenreMusicalOptions"></datalist>
+			<label for="aTypeMusique">Type de Musique:</label><select id="aTypeMusique" style="width: 25ch;">
+				<option value="">-- Choisir --</option>
+			</select>
+			<label for="aGenreMusical">Genre musical:</label><select id="aGenreMusical" style="width: 43ch;">
+				<option value="">-- Choisir --</option>
+			</select>
 		</div>
 
 		<!-- Ligne 7: Nom complet -->
@@ -4242,7 +4249,6 @@ window.addEventListener('pagehide', () => {
 
 			function populateArtistDataLists() {
 				const genreMusicalOptions = document.getElementById('genreMusicalOptions');
-				const typeMusiqueOptions = document.getElementById('aTypeMusiqueOptions');
 				const instrumentOptions = document.getElementById('instrumentOptions');
 				const compositeurOptions = document.getElementById('compositeurOptions'); // Nouveau
 
@@ -4275,21 +4281,33 @@ window.addEventListener('pagehide', () => {
 					compositeurOptions.appendChild(option);
 				});
 
-				// Mise à jour des datalists du formulaire "Nouvel artiste"
-				const aGenreMusicalOptions = document.getElementById('aGenreMusicalOptions');
-				aGenreMusicalOptions.innerHTML = '';
+				// Mise à jour des combo box (select) du formulaire "Nouvel artiste"
+				const aGenreMusicalSelect = document.getElementById('aGenreMusical');
+				const aTypeMusiqueSelect = document.getElementById('aTypeMusique');
+				const previousGenreValue = aGenreMusicalSelect.value;
+				const previousTypeValue = aTypeMusiqueSelect.value;
+
+				aGenreMusicalSelect.innerHTML = '<option value="">-- Choisir --</option>';
 				[...genres].sort().forEach(value => {
 					const option = document.createElement('option');
 					option.value = value;
-					aGenreMusicalOptions.appendChild(option);
+					option.textContent = value;
+					aGenreMusicalSelect.appendChild(option);
 				});
+				if (previousGenreValue && genres.has(previousGenreValue)) {
+					aGenreMusicalSelect.value = previousGenreValue;
+				}
 
-				typeMusiqueOptions.innerHTML = '';
+				aTypeMusiqueSelect.innerHTML = '<option value="">-- Choisir --</option>';
 				[...types].sort().forEach(value => {
 					const option = document.createElement('option');
 					option.value = value;
-					typeMusiqueOptions.appendChild(option);
+					option.textContent = value;
+					aTypeMusiqueSelect.appendChild(option);
 				});
+				if (previousTypeValue && types.has(previousTypeValue)) {
+					aTypeMusiqueSelect.value = previousTypeValue;
+				}
 
 				instrumentOptions.innerHTML = '';
 				[...instruments].sort().forEach(value => {
@@ -4854,9 +4872,7 @@ window.addEventListener('pagehide', () => {
 				// Ajout de l'écouteur pour charger la Remarque en mode création (basé sur le Mnémo)
 				document.getElementById('aMnémo').removeEventListener('input', loadArtistRemarque);
 				document.getElementById('aMnémo').addEventListener('input', loadArtistRemarque);
-				document.getElementById('aTypeMusique').setAttribute('list', 'aTypeMusiqueOptions');
 				document.getElementById('aGenreMusical').value = '';
-				document.getElementById('aGenreMusical').setAttribute('list', 'aGenreMusicalOptions');
 
 				// Déclenche la mise à jour initiale du Nom Complet (vide)
 				updateNomComplet();
