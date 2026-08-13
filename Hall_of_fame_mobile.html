@@ -1587,6 +1587,24 @@
 							}
 						});
 					});
+
+					// Demander au SW de mettre en cache EXACTEMENT cette page (quel que
+					// soit son nom de fichier réel une fois déployée) + le manifeste,
+					// dès qu'un Service Worker actif est disponible. C'est ce qui rend
+					// l'appli résiliente : après cette première visite réussie, elle
+					// se rechargera depuis le cache même si l'hébergement est down/lent.
+					const cacheAppShell = (sw) => {
+						if (!sw) return;
+						sw.postMessage({
+							type: 'CACHE_URLS',
+							urls: [window.location.href, swPath, './manifest.json']
+						});
+					};
+					if (registration.active) {
+						cacheAppShell(registration.active);
+					} else {
+						navigator.serviceWorker.ready.then((readyReg) => cacheAppShell(readyReg.active));
+					}
 				})
 				.catch((error) => {
 					console.warn('⚠️ Service Worker non disponible:', error.message);
